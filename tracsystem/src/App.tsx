@@ -1,26 +1,26 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+// TRAC System Pages
 import LoginPage from "./LoginPage";
 import AuthenticationPage from "./AuthenticationPage";
 import RegisterPage from "./RegisterPage";
-import DashboardPage from "./DashboardPage";
+
+// ✅ Replace DashboardPage with AttendanceChart
+import AttendanceChart from "./components/attendance-chart";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Default landing page */}
+        {/* ==== TRAC SYSTEM ROUTES ==== */}
         <Route path="/" element={<LoginPage />} />
-
-        {/* OTP verification */}
         <Route path="/auth" element={<AuthenticationPage />} />
-
-        {/* Registration */}
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* Dashboard after OTP */}
-        <Route path="/dashboard" element={<DashboardPage />} />
+        {/* ✅ Dashboard now shows AttendanceChart */}
+        <Route path="/dashboard" element={<AttendanceChart />} />
 
-        {/* Catch-all */}
+        {/* ==== FALLBACK ==== */}
         <Route path="*" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>
