@@ -1,0 +1,144 @@
+/* Overall layout: horizontal split */
+.login-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+.logo {
+  max-width: 500px;
+  height: auto;
+}
+.logo-wrapper {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0);
+}
+/* Left side with background image and logo */
+.left-side {
+  flex: 1;
+  background-image: url('/schoolbg.jpeg');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.left-side {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* ensure child content doesn't overflow */
+}
+/* Brown overlay */
+.left-side::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 110%;
+  height: 110%;
+  background-color: rgba(102, 51, 0, 0.616); /* brown tone with 40% opacity */
+  z-index: 1;
+}
+/* Make sure logo stays on top */
+.logo-wrapper {
+  position: relative;
+  z-index: 2;
+}
+
+/* Zoom and blur effect */
+.left-side::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120%; /* zoomed in slightly */
+  height: 140%;
+  background-image: url('/schoolbg.jpeg');
+  background-size: cover;
+  background-position: center;
+  filter: blur(5px) brightness(0.9);
+  transform: scale(1.1); /* further zoom */
+  z-index: 0;
+}
+
+
+
+/* Right side with cream background */
+.right-side {
+  flex: 1;
+  background-color: #f8edc6;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Login form card */
+.form-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 2px solid #503418;
+  box-shadow: 6px 6px 0 #503418;
+  width: 90%;
+  max-width: 400px;
+}
+
+.form-card h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.form-card p {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 1rem;
+}
+
+/* Form fields */
+.form-card label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+.form-card input {
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.3rem;
+  border: 2px solid #503418;
+  border-radius: 1rem;
+  font-size: 1rem;
+}
+
+/* Login button */
+.form-card button {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  background: #503418;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 2rem;
+  cursor: pointer;
+}
+
+.form-card button:hover {
+  background: #3b2c1a;
+}
+
+.error-msg {
+color: red;
+font-weight: bold;
+margin-top: 10px;
+text-align: center;
+}
