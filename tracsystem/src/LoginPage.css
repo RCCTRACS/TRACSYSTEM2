@@ -89,24 +89,16 @@
   box-shadow: 6px 6px 0 #503418;
   width: 90%;
   max-width: 400px;
+  text-align: left; /* left-align text by default */
 }
 
-.form-card h2 {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: bold;
-}
-
-.form-card p {
-  margin: 0.5rem 0 1.5rem;
-  font-size: 1rem;
-}
-
-/* Form fields */
+/* Headings and description left-aligned */
+.form-card h2,
+.form-card p,
 .form-card label {
+  text-align: left;
   display: block;
-  margin-top: 1rem;
-  font-weight: 500;
+  width: 100%;
 }
 
 .form-card input {
@@ -118,10 +110,13 @@
   font-size: 1rem;
 }
 
-/* Login button */
-.form-card button {
+/* Center the buttons */
+.form-card button,
+.form-card .create-btn {
   width: 100%;
-  margin-top: 1.5rem;
+  max-width: 340px;
+  margin: 1.5rem auto 0 auto; /* center horizontally */
+  display: block;
   padding: 0.75rem;
   background: #503418;
   color: #fff;
@@ -130,15 +125,19 @@
   border: none;
   border-radius: 2rem;
   cursor: pointer;
+  text-align: center;
 }
 
-.form-card button:hover {
-  background: #3b2c1a;
+/* Center the "Don't have an account?" text */
+.form-card .account-text {
+  text-align: center;
+  margin: 1rem 0 0 0;
 }
 
+/* Error message left-aligned */
 .error-msg {
-color: red;
-font-weight: bold;
-margin-top: 10px;
-text-align: center;
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: left;
 }

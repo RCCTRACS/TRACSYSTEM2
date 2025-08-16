@@ -3,8 +3,8 @@ import {
   LayoutDashboard,
   CalendarDays,
   BarChart3,
+  User,
 } from "lucide-react";
-import TracHeader from "./header";
 import "./attendance-chart.css";
 
 interface ChartData {
@@ -33,7 +33,20 @@ const AttendanceChart = () => {
 
       {/* Main Content */}
       <div className="main">
-        <TracHeader />
+        {/* Header */}
+        <div className="trac-header">
+          <div className="header-left">
+            <div className="logo-title">
+              <img src="/logo.png" alt="Logo" className="header-logo" />
+              <span className="system-title">TRAC System</span>
+            </div>
+            <div className="welcome">Welcome Gerwin Cando!</div>
+          </div>
+          <div className="profile-chip">
+            <User className="profile-chip-icon" />
+            <span className="profile-chip-name">Gerwin</span>
+          </div>
+        </div>
 
         <div className="content">
           {/* Stats */}

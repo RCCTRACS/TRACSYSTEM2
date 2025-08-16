@@ -52,8 +52,26 @@ try {
     $mail->setFrom('rcctracs@gmail.com', 'TRAC System');
     $mail->addAddress($email);
     $mail->isHTML(true);
-    $mail->Subject = 'Your OTP Code';
-    $mail->Body    = "<h3>Your OTP Code is: <b>$otp</b></h3><p>This code will expire in 5 minutes.</p>";
+    $mail->Subject = 'OTP CODE';
+    $mail->Body = '
+      <div style="
+        font-family: Sora, Arial, sans-serif;
+        background: #f9f7f1;
+        border-radius: 24px;
+        border: 3px solid #5b3a1a;
+        max-width: 420px;
+        margin: 32px auto;
+        padding: 32px 24px;
+        color: #222;
+        text-align: center;
+      ">
+        <img src="https://i.postimg.cc/x1mTm0zX/logo.png" alt="TRAC System" style="width:100px;height:100px;object-fit:contain;margin-bottom:18px;" />
+        <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:18px;">TRAC System</h2>
+        <p style="font-size:1.1rem;margin-bottom:18px;">Your OTP Code is:</p>
+        <div style="font-size:2.4rem;font-weight:700;color:#5b3a1a;letter-spacing:2px;margin-bottom:18px;">' . $otp . '</div>
+        <p style="font-size:1rem;color:#444;margin-bottom:0;">This code will expire in 5 minutes.</p>
+      </div>
+    ';
 
     $mail->send();
     echo json_encode(["success" => true, "message" => "OTP sent successfully"]);

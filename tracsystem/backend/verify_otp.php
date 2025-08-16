@@ -57,5 +57,5 @@ if ($row = $result->fetch_assoc()) {
 
     echo json_encode(["success" => true, "message" => "OTP verified successfully"]);
 } else {
-    echo json_encode(["success" => false, "message" => "No OTP found for this user"]);
+    echo json_encode(["success" => false, "message" => "Invalid OTP"]);
 }

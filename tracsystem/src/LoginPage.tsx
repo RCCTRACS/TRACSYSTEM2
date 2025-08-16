@@ -15,7 +15,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost/tracsystem/backend/login.php', {
+      const res = await fetch('http://192.168.1.13/tracsystem/backend/login.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

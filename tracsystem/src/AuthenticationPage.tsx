@@ -1,47 +1,79 @@
 import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './LoginPage.css';
+import './AuthenticationPage.css';
+
+// Import Sora font
+import '@fontsource/sora/400.css';
+import '@fontsource/sora/600.css';
+import '@fontsource/sora/700.css';
 
 const AuthenticationPage: React.FC = () => {
-  const [otp, setOtp] = useState<string>('');
+  const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(''));
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [verified, setVerified] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [otpAnimation, setOtpAnimation] = useState<'success' | 'error' | null>(null);
   const navigate = useNavigate();
 
   const email = localStorage.getItem('authEmail') || '';
   const userId = localStorage.getItem('authUserId') || '';
- const sendOtp = async () => {
-      try {
-        const res = await fetch('http://localhost/tracsystem/backend/send_otp.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: Number(userId), email })
-        });
 
-       const data = await res.json();
-        
-        if (!data.success) {
-          setErrorMsg(data.message || 'Failed to send OTP.');
-      }
-      } catch (err) {
-        setErrorMsg('Send OTP Error');
+  const sendOtp = async () => {
+    try {
+      const res = await fetch('http://192.168.1.13/tracsystem/backend/send_otp.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: Number(userId), email })
+      });
 
+      const data = await res.json();
+      if (!data.success) {
+        setErrorMsg(data.message || 'Failed to send OTP.');
+      } else {
+        setErrorMsg(''); // clear any previous error
       }
-    };
-  // 🔹 Send OTP automatically when page load
-  
+    } catch (err) {
+      setErrorMsg('Failed to send OTP.');
+      console.error('Send OTP error:', err);
+    }
+  };
+
   useEffect(() => {
-    
     sendOtp();
   }, []);
+
+  useEffect(() => {
+    if (verified) {
+      // Wait 1 second to show green animation before navigating
+      const timer = setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [verified, navigate]);
+
+  const handleChange = (value: string, index: number) => {
+    if (/^[0-9]?$/.test(value)) {
+      const newOtp = [...otpValues];
+      newOtp[index] = value;
+      setOtpValues(newOtp);
+
+      if (value && index < 5) {
+        const nextInput = document.getElementById(`otp-${index + 1}`);
+        if (nextInput) nextInput.focus();
+      }
+    }
+  };
 
   const handleOtpSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg('');
     setLoading(true);
-  
+
+    const otp = otpValues.join('');
+
     try {
-      const res = await fetch('http://localhost/tracsystem/backend/verify_otp.php', {
+      const res = await fetch('http://192.168.1.13/tracsystem/backend/verify_otp.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: Number(userId), otp })
@@ -49,43 +81,84 @@ const AuthenticationPage: React.FC = () => {
 
       const data = await res.json();
       if (data.success) {
-        console.log("data success");
-        alert('OTP verified successfully!');
-        navigate('/dashboard');
+        setOtpAnimation('success');
+        setVerified(true); // green stays until dashboard
       } else {
-        console.log("data fail");
-        alert("Invalid backend response");
+        setOtpAnimation('error');
         setErrorMsg(data.message || 'Invalid OTP.');
+        setTimeout(() => {
+          setOtpAnimation(null); // remove red after 2 seconds
+          setErrorMsg('');
+        }, 2000);
       }
-    } catch (err) {
-      console.log("last catch");
+    } catch {
+      setOtpAnimation('error');
       setErrorMsg('Verify OTP Error');
+      setTimeout(() => {
+        setOtpAnimation(null);
+        setErrorMsg('');
+      }, 2000);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (
+      e.key === "Backspace" &&
+      otpValues[index] === "" &&
+      index > 0
+    ) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    }
+  };
+
   return (
-    <div className="login-container">
-      <div className="form-card">
-        <h2>OTP Verification</h2>
-        <p>We sent a code to: <strong>{email}</strong></p>
+    <div className="login-container" style={{ fontFamily: 'Sora, sans-serif' }}>
+      {/* LEFT SIDE */}
+      <div className="left-side">
+        <div className="logo-wrapper">
+          <img src="/logo.png" alt="RCC TRACS Logo" />
+        </div>
+      </div>
 
-        <form onSubmit={handleOtpSubmit}>
-          <input
-            type="text"
-            maxLength={6}
-            placeholder="Enter OTP"
-            value={otp}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setOtp(e.target.value)}
-            required
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? 'Verifying...' : 'Verify OTP'}
-          </button>
-        </form>
+      {/* RIGHT SIDE */}
+      <div className="right-side">
+        <div className="form-card">
+          <h2>Authentication</h2>
+          <p>We’ve sent a one-time password to your email</p>
 
-        {errorMsg && <p className="error-msg">{errorMsg}</p>}
+          <form onSubmit={handleOtpSubmit}>
+            <div className="otp-container">
+              {otpValues.map((digit, index) => (
+                <input
+                  key={index}
+                  id={`otp-${index}`}
+                  className={`otp-box${otpAnimation ? ' ' + otpAnimation : ''}`}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    handleChange(e.target.value, index)
+                  }
+                  onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                  placeholder=" "
+                  style={otpAnimation ? { animationDelay: `${index * 0.08}s` } : {}}
+                />
+              ))}
+            </div>
+
+            {verified && <p className="verified-text">OTP Verified!</p>}
+            {errorMsg && <p className="error-msg">{errorMsg}</p>}
+
+            {!verified && (
+              <button type="submit" className="continue-btn" disabled={loading}>
+                {loading ? 'Verifying...' : 'Verify OTP'}
+              </button>
+            )}
+          </form>
+        </div>
       </div>
     </div>
   );

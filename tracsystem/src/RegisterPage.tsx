@@ -18,7 +18,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       const res = await fetch(
-        "http://localhost/tracsystem/tracsystem/backend/register.php",
+        "http://192.168.1.13/tracsystem/backend/register.php",
         {
           method: "POST",
           headers: {
