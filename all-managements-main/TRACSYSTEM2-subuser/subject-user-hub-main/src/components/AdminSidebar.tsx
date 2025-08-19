@@ -1,0 +1,132 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useLocation, useNavigate } from "react-router-dom";
+
+interface MenuItem {
+  src: string;
+  label: string;
+  url: string;
+}
+
+const AdminSidebar: React.FC = () => {
+  const menuItems: MenuItem[] = [
+    { src: "/Dashboard.png", label: "Dashboard", url: "/dashboard" },
+    { src: "/user.png", label: "User Management", url: "/" },
+    { src: "/subject.png", label: "Subject Management", url: "/subjects" },
+    { src: "/department.png", label: "Department Management", url: "/departments" },
+    { src: "/attendance.png", label: "Attendance Management", url: "/attendance" },
+    { src: "/student.png", label: "Student Management", url: "/students" },
+    { src: "/grade.png", label: "Grade Management", url: "/grades" },
+    { src: "/section.png", label: "Section Management", url: "/sections" },
+    { src: "/strand.png", label: "Strand Management", url: "/strands" },
+  ];
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Play intro animation only on the first load of the app (per tab)
+  const [shouldPlayIntro, setShouldPlayIntro] = useState(false);
+  useEffect(() => {
+    const seen = sessionStorage.getItem("sidebarHasAnimated");
+    if (!seen) {
+      setShouldPlayIntro(true);
+      sessionStorage.setItem("sidebarHasAnimated", "1");
+    }
+  }, []);
+
+  const handleNavigate = (url: string) => {
+    navigate(url);
+  };
+
+  // Tooltip hover state (so we can animate it smoothly)
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  return (
+    <div className="h-screen flex">
+      <div className="relative w-20 bg-sidebar h-screen flex flex-col items-center py-6 rounded-2xl shadow-lg ml-4 overflow-hidden">
+        {/* Logo */}
+        <motion.div
+          initial={shouldPlayIntro ? { scale: 0, opacity: 0 } : undefined}
+          animate={shouldPlayIntro ? { scale: 1, opacity: 1 } : undefined}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="mb-8"
+        >
+          <img
+            src="/logo.png"
+            alt="TRACS Logo"
+            className="w-12 h-12 object-contain drop-shadow-md"
+          />
+        </motion.div>
+
+        {/* Menu */}
+        <nav className="flex flex-col space-y-6 relative">
+          {menuItems.map((item, index) => {
+            const isActive = location.pathname === item.url;
+
+            return (
+              <motion.div
+                key={item.url}
+                className="relative flex items-center"
+                onHoverStart={() => setHoveredIndex(index)}
+                onHoverEnd={() => setHoveredIndex(null)}
+                initial={
+                  shouldPlayIntro ? { opacity: 0, x: -30 } : undefined
+                }
+                animate={
+                  shouldPlayIntro
+                    ? {
+                        opacity: 1,
+                        x: 0,
+                        transition: {
+                          delay: index * 0.12,
+                          type: "spring",
+                          stiffness: 150,
+                          damping: 18,
+                        },
+                      }
+                    : undefined
+                }
+              >
+                {/* Icon button */}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleNavigate(item.url)}
+                  className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors shadow-sm ${
+                    isActive
+                      ? "bg-white border-2 border-sidebar shadow-lg"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                  title={item.label}
+                >
+                  <img
+                    src={item.src}
+                    alt={item.label}
+                    className="w-7 h-7 object-contain"
+                  />
+                </motion.button>
+
+                {/* Tooltip */}
+                <motion.div
+                  className="absolute left-16 bg-white px-3 py-1 rounded-lg shadow-md border border-gray-200 text-sidebar text-sm whitespace-nowrap pointer-events-none"
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{
+                    opacity: hoveredIndex === index ? 1 : 0,
+                    x: hoveredIndex === index ? 0 : -6,
+                  }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {item.label}
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </nav>
+      </div>
+    </div>
+  );
+};
+
+export default AdminSidebar;
