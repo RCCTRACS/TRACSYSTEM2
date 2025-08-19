@@ -39,22 +39,6 @@ $result = $stmt->get_result();
 if ($user = $result->fetch_assoc()) {
     if (password_verify($passwordInput, $user['password_hash'])) {
         
-    //     // Generate OTP
-    //    // $otp = rand(100000, 999999);
-    //     $expiresAt = date("Y-m-d H:i:s", strtotime("+5 minutes"));
-
-    //     // Store OTP
-    //     $otpStmt = $conn->prepare("INSERT INTO otp_codes (user_id, otp_code, expires_at) VALUES (?, ?, ?)");
-    //     $otpStmt->bind_param("iss", $user['id'], $otp, $expiresAt);
-    //     $otpStmt->execute();
-    //     $otpStmt->close();
-
-    //     // Send OTP via Email (PHPMailer or basic mail)
-    //     $subject = "Your OTP Code, LOGIN";
-    //     $message = "LOGIN: $otp\nIt will expire in 5 minutes.";
-    //     $headers = "From: no-reply@tracsystem.com";
-    //     @mail($email, $subject, $message, $headers);
-
         echo json_encode(["success" => true, "message" => "OTP sent to your email", "userId" => $user['id']]);
     } else {
         echo json_encode(["success" => false, "message" => "Invalid password"]);
