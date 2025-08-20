@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
 interface MenuItem {
@@ -26,7 +26,6 @@ const AdminSidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Play intro animation only on the first load of the app (per tab)
   const [shouldPlayIntro, setShouldPlayIntro] = useState(false);
   useEffect(() => {
     const seen = sessionStorage.getItem("sidebarHasAnimated");
@@ -40,12 +39,11 @@ const AdminSidebar: React.FC = () => {
     navigate(url);
   };
 
-  // Tooltip hover state (so we can animate it smoothly)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
     <div className="h-screen flex">
-      <div className="relative w-20 bg-sidebar h-screen flex flex-col items-center py-6 rounded-2xl shadow-lg ml-4 overflow-hidden">
+      <div className="relative w-20 bg-sidebar h-screen flex flex-col items-center py-6 rounded-2xl shadow-lg ml-4 overflow-visible">
         {/* Logo */}
         <motion.div
           initial={shouldPlayIntro ? { scale: 0, opacity: 0 } : undefined}
@@ -69,11 +67,9 @@ const AdminSidebar: React.FC = () => {
               <motion.div
                 key={item.url}
                 className="relative flex items-center"
-                onHoverStart={() => setHoveredIndex(index)}
-                onHoverEnd={() => setHoveredIndex(null)}
-                initial={
-                  shouldPlayIntro ? { opacity: 0, x: -30 } : undefined
-                }
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                initial={shouldPlayIntro ? { opacity: 0, x: -30 } : undefined}
                 animate={
                   shouldPlayIntro
                     ? {
@@ -108,18 +104,20 @@ const AdminSidebar: React.FC = () => {
                   />
                 </motion.button>
 
-                {/* Tooltip */}
-                <motion.div
-                  className="absolute left-16 bg-white px-3 py-1 rounded-lg shadow-md border border-gray-200 text-sidebar text-sm whitespace-nowrap pointer-events-none"
-                  initial={{ opacity: 0, x: -6 }}
-                  animate={{
-                    opacity: hoveredIndex === index ? 1 : 0,
-                    x: hoveredIndex === index ? 0 : -6,
-                  }}
-                  transition={{ duration: 0.18 }}
-                >
-                  {item.label}
-                </motion.div>
+                {/* Label Box Tooltip */}
+                <AnimatePresence>
+                  {hoveredIndex === index && (
+                    <motion.div
+                      className="absolute left-full ml-3 px-4 py-2 bg-white border-2 border-sidebar rounded-lg shadow-lg shadow-brown-400 text-black font-medium whitespace-nowrap z-50"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                    >
+                      {item.label}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             );
           })}
