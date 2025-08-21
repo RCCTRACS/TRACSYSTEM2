@@ -23,7 +23,7 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
   const handleUpload = () => {
     if (!file) return;
 
-    setError(""); // reset previous errors
+    setError("");
     const reader = new FileReader();
 
     reader.onload = (e) => {
@@ -34,7 +34,6 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          // Validate headers
           const expectedHeaders = ["name", "email", "department", "level", "access"];
           const headers = results.meta.fields || [];
           const isValid = expectedHeaders.every(h => headers.includes(h));
@@ -43,7 +42,6 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
             return;
           }
 
-          // Map parsed rows to User[]
           const newUsers: User[] = results.data.map((row) => ({
             id: Date.now().toString() + Math.random().toString(36).slice(2),
             name: row.name || "",
@@ -67,34 +65,42 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
   };
 
   return (
-    <DialogContent className="sm:max-w-[500px] bg-popover">
-      <DialogHeader>
-        <DialogTitle>Select a CSV file</DialogTitle>
+    <DialogContent className="sm:max-w-[500px] bg-popover p-6 rounded-xl shadow-md">
+      <DialogHeader className="pb-4 border-b border-[#5C3A21]/30">
+        <DialogTitle className="text-xl font-bold text-black">Select a CSV file</DialogTitle>
       </DialogHeader>
 
-      <div className="space-y-4">
+      <div className="space-y-6 mt-4">
         {/* File Input */}
         <div className="space-y-2">
-          <Label>Choose File</Label>
+          <Label className="font-bold text-black">Choose File</Label>
           <Input
             type="file"
             accept=".csv"
-            className="w-full"
+            className="w-full rounded-lg border-[3px] border-[#3E1F0F] focus:border-[#3E1F0F] focus:ring-1 focus:ring-[#3E1F0F]"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
           <p className="text-xs text-muted-foreground">
             {file ? file.name : "No file chosen"}
           </p>
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => { setFile(null); setError(""); onClose(); }}>
+        {/* Footer Buttons */}
+        <div className="flex justify-end gap-3 mt-2">
+          <Button
+            variant="outline"
+            className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200 rounded-lg"
+            onClick={() => { setFile(null); setError(""); onClose(); }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={!file}>
-            <Upload className="h-4 w-4 mr-1" />
+          <Button
+            className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200 rounded-lg flex items-center"
+            onClick={handleUpload}
+            disabled={!file}
+          >
+            <Upload className="h-4 w-4 mr-2" />
             Upload
           </Button>
         </div>

@@ -43,18 +43,24 @@ const AdminSidebar: React.FC = () => {
 
   return (
     <div className="h-screen flex">
-      <div className="relative w-20 bg-sidebar h-screen flex flex-col items-center py-6 rounded-2xl shadow-lg ml-4 overflow-visible">
+      {/* Sidebar wrapper with animation */}
+      <motion.div
+        initial={shouldPlayIntro ? { x: -100, opacity: 0 } : false}
+        animate={shouldPlayIntro ? { x: 0, opacity: 1 } : false}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="relative w-20 bg-sidebar h-screen flex flex-col items-center py-6 rounded-2xl shadow-lg ml-4 overflow-visible"
+      >
         {/* Logo */}
         <motion.div
           initial={shouldPlayIntro ? { scale: 0, opacity: 0 } : undefined}
           animate={shouldPlayIntro ? { scale: 1, opacity: 1 } : undefined}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
           className="mb-8"
         >
           <img
             src="/logo.png"
             alt="TRACS Logo"
-            className="w-12 h-12 object-contain drop-shadow-md"
+            className="w-16 h-16 object-contain drop-shadow-md"
           />
         </motion.div>
 
@@ -76,7 +82,7 @@ const AdminSidebar: React.FC = () => {
                         opacity: 1,
                         x: 0,
                         transition: {
-                          delay: index * 0.12,
+                          delay: 0.4 + index * 0.12, // staggered delay after logo
                           type: "spring",
                           stiffness: 150,
                           damping: 18,
@@ -122,7 +128,7 @@ const AdminSidebar: React.FC = () => {
             );
           })}
         </nav>
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -27,7 +27,7 @@ export function DeleteUserDialog({ isOpen, onClose, onConfirm, userName }: Delet
         <div className="space-y-4">
           <p className="text-muted-foreground">
             Are you sure you want to delete the user <strong>{userName}</strong>? 
-            This action cannot be undone.
+            This action is irreversible.
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>

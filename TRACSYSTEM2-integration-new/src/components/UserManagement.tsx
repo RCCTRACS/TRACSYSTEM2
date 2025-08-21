@@ -16,9 +16,9 @@ import {
 
 import { UserFormDialog } from "./UserFormDialog";
 import { DeleteUserDialog } from "./DeleteUserDialog";
-import { FilterDialog } from "./FilterDialog";
-import { ExportDialog } from "./ExportDialog";
-import { BulkUploadDialog } from "./BulkUploadDialog";
+import { ExportDialog } from "./ExportUserDialog";
+import { BulkUploadDialog } from "./BulkUploadUser";
+import { FilterUserDialog } from "./FilterUserDialog";
 
 export interface User {
   id: string;
@@ -31,6 +31,7 @@ export interface User {
 
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
@@ -44,13 +45,45 @@ export function UserManagement() {
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.level || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // --- Search filter ---
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    const searchFiltered = users.filter(
+      (u) =>
+        u.name.toLowerCase().includes(term.toLowerCase()) ||
+        u.email.toLowerCase().includes(term.toLowerCase()) ||
+        u.department.toLowerCase().includes(term.toLowerCase()) ||
+        (u.level || "").toLowerCase().includes(term.toLowerCase())
+    );
+    setFilteredUsers(searchFiltered);
+  };
+
+  // --- Add/Edit User ---
+  const handleSaveUser = (userData: Partial<User>) => {
+    if (selectedUser) {
+      const updatedUsers = users.map((u) =>
+        u.id === selectedUser.id ? { ...u, ...userData } : u
+      );
+      setUsers(updatedUsers);
+      setFilteredUsers(updatedUsers);
+    } else {
+      const newUser: User = {
+        id: Date.now().toString(),
+        name: userData.name || "",
+        email: userData.email || "",
+        department: userData.department || "",
+        level: userData.level,
+        access: userData.access || "",
+      };
+      const updatedUsers = [...users, newUser];
+      setUsers(updatedUsers);
+      setFilteredUsers(updatedUsers); // immediate display
+    }
+
+    setIsAddUserOpen(false);
+    setIsEditUserOpen(false);
+    setSelectedUser(null);
+  };
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
@@ -62,38 +95,17 @@ export function UserManagement() {
     setIsDeleteUserOpen(true);
   };
 
-  const handleSaveUser = (userData: Partial<User>) => {
-    if (selectedUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === selectedUser.id ? { ...u, ...userData } : u
-        )
-      );
-    } else {
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: userData.name || "",
-        email: userData.email || "",
-        department: userData.department || "",
-        level: userData.level,
-        access: userData.access || "",
-      };
-      setUsers([...users, newUser]);
-    }
-    setIsAddUserOpen(false);
-    setIsEditUserOpen(false);
-    setSelectedUser(null);
-  };
-
   const handleConfirmDelete = () => {
     if (selectedUser) {
-      setUsers(users.filter((u) => u.id !== selectedUser.id));
+      const remaining = users.filter((u) => u.id !== selectedUser.id);
+      setUsers(remaining);
+      setFilteredUsers(remaining);
       setIsDeleteUserOpen(false);
       setSelectedUser(null);
     }
   };
 
-  // --- Download Template Function ---
+  // --- Download Template ---
   const handleDownloadTemplate = () => {
     const csvContent = "id,name,email,department,level,access\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -128,7 +140,7 @@ export function UserManagement() {
           <Input
             placeholder="Search users..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className={`pl-10 w-64 ${outlineDarkBrownBtn}`}
           />
         </div>
@@ -171,7 +183,11 @@ export function UserManagement() {
               </Button>
             </DialogTrigger>
             <BulkUploadDialog
-              onUpload={(newUsers) => setUsers([...users, ...newUsers])}
+              onUpload={(newUsers) => {
+                const updatedUsers = [...users, ...newUsers];
+                setUsers(updatedUsers);
+                setFilteredUsers(updatedUsers);
+              }}
               onClose={() => setIsBulkUploadOpen(false)}
             />
           </Dialog>
@@ -198,7 +214,18 @@ export function UserManagement() {
                 Filter
               </Button>
             </DialogTrigger>
-            <FilterDialog />
+
+            <FilterUserDialog
+              onFilter={(department) => {
+                if (department === "All") {
+                  setFilteredUsers(users);
+                } else {
+                  const filtered = users.filter((u) => u.department === department);
+                  setFilteredUsers(filtered);
+                }
+              }}
+              onClose={() => setIsFilterOpen(false)}
+            />
           </Dialog>
         </div>
       </div>

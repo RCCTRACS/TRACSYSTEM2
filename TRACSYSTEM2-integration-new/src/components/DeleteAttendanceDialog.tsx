@@ -26,8 +26,7 @@ const DeleteAttendanceDialog: React.FC<DeleteAttendanceDialogProps> = ({
           <DialogTitle>Delete Attendance</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-gray-600">
-          Are you sure you want to delete this attendance record? This action
-          cannot be undone.
+          Are you sure you want to delete this attendance record? This action is irreversible.
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

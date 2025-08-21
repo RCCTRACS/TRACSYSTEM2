@@ -1,7 +1,8 @@
+"use client";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -10,38 +11,93 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Plus, Edit, Trash2, User } from "lucide-react";
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import { Pencil, Download, Filter, Edit, Trash2, User } from "lucide-react";
+import { ManualAttendanceDialog } from "./ManualInput";
+import { FilterAttendanceDialog } from "./FilterAttendanceDialog";
 
 export interface Attendance {
-  id: string;          // Attendance ID
-  studentName: string; // Student Name
-  date: string;        // Date of attendance
+  id: string;          // Barcode ID
+  studentName: string; // Name
+  yearLevel: string;   // Year Level
+  department: string;  // Department
+  timeIn: string;      // Time In
+  timeOut: string;     // Time Out
   status: string;      // Present, Absent, Late
 }
 
 export function AttendanceManagement() {
   const [attendances, setAttendances] = useState<Attendance[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Filter state
+  const [filters, setFilters] = useState({
+    name: "",
+    yearLevel: "",
+    department: "",
+    timeIn: "",
+    timeOut: "",
+    status: "",
+  });
 
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
-  const outlineDarkBrownBox =
-    "border-2 border-[#5C4033] rounded-xl shadow-sm bg-white";
+  // Export CSV
+  const handleExport = () => {
+    const csvHeader = "Barcode ID,Name,Year Level,Department,Time In,Time Out,Status\n";
+    const csvRows = attendances
+      .map(
+        (a) =>
+          `${a.id},${a.studentName},${a.yearLevel},${a.department},${a.timeIn},${a.timeOut},${a.status}`
+      )
+      .join("\n");
+    const blob = new Blob([csvHeader + csvRows], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "attendance_records.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-  // Filter attendances based on search term
-  const filteredAttendances = attendances.filter(
-    (attendance) =>
-      attendance.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      attendance.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      attendance.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Handle Add from Manual Dialog
+  const handleAddAttendance = (barcodeId: string, timeIn: string) => {
+    const newAttendance: Attendance = {
+      id: barcodeId,
+      studentName: "Unknown", // placeholder, can be fetched from DB later
+      yearLevel: "N/A",
+      department: "N/A",
+      timeIn,
+      timeOut: "-",
+      status: "Present",
+    };
+
+    setAttendances((prev) => [...prev, newAttendance]);
+  };
+
+  // Handle Apply Filters
+  const handleApplyFilters = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+  };
+
+  // Apply filters to attendances
+  const filteredAttendances = attendances.filter((a) => {
+    return (
+      (filters.name === "" || a.studentName.toLowerCase().includes(filters.name.toLowerCase())) &&
+      (filters.yearLevel === "" || a.yearLevel.toLowerCase().includes(filters.yearLevel.toLowerCase())) &&
+      (filters.department === "" || a.department.toLowerCase().includes(filters.department.toLowerCase())) &&
+      (filters.timeIn === "" || a.timeIn >= filters.timeIn) &&
+      (filters.timeOut === "" || a.timeOut <= filters.timeOut) &&
+      (filters.status === "" || a.status === filters.status)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -59,84 +115,110 @@ export function AttendanceManagement() {
         </Button>
       </div>
 
-      {/* Search + Actions */}
-      <div className="flex items-center justify-between">
-        <div className="relative">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search attendance..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`pl-10 w-64 ${outlineDarkBrownBtn}`}
-          />
-        </div>
+      {/* Actions - aligned to right */}
+      <div className="flex justify-end items-center gap-2">
+        {/* Manual Input */}
+        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <DialogTrigger asChild>
+            <Button className={outlineDarkBrownBtn}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Manual Input
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="p-0">
+            <ManualAttendanceDialog
+              open={isAddOpen}
+              onClose={() => setIsAddOpen(false)}
+              onAdd={handleAddAttendance}
+            />
+          </DialogContent>
+        </Dialog>
 
-        <div className="flex items-center gap-2">
-          {/* Add Attendance */}
-          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-            <DialogTrigger asChild>
-              <Button className={outlineDarkBrownBtn}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            </DialogTrigger>
-            {/* TODO: AddAttendanceDialog here */}
-          </Dialog>
-        </div>
+        {/* Export */}
+        <Button className={outlineDarkBrownBtn} onClick={handleExport}>
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
+
+        {/* Filter */}
+        <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <DialogTrigger asChild>
+            <Button className={outlineDarkBrownBtn}>
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="p-0">
+            <FilterAttendanceDialog
+              open={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              onApply={handleApplyFilters}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Attendance Table */}
-      <Card className={outlineDarkBrownBox}>
-        <CardHeader>
-          <CardTitle>Attendance Records</CardTitle>
-        </CardHeader>
+      <Card className="border-2 border-[#5C4033] rounded-lg shadow-sm">
+        <CardHeader></CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="bg-admin-table-header">
-                <TableHead>Attendance ID</TableHead>
-                <TableHead>Student Name</TableHead>
-                <TableHead>Date</TableHead>
+              <TableRow className="bg-white font-bold text-center">
+                <TableHead>Barcode ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Year Level</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Time In</TableHead>
+                <TableHead>Time Out</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAttendances.map((attendance) => (
-                <TableRow
-                  key={attendance.id}
-                  className="bg-admin-table-row hover:bg-admin-table-row-hover"
-                >
-                  <TableCell>{attendance.id}</TableCell>
-                  <TableCell>{attendance.studentName}</TableCell>
-                  <TableCell>{attendance.date}</TableCell>
-                  <TableCell>{attendance.status}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedAttendance(attendance);
-                          setIsEditOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedAttendance(attendance);
-                          setIsDeleteOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+              {filteredAttendances.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-gray-500 py-6">
+                    No attendance records
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredAttendances.map((attendance) => (
+                  <TableRow key={attendance.id} className="text-center">
+                    <TableCell>{attendance.id}</TableCell>
+                    <TableCell>{attendance.studentName}</TableCell>
+                    <TableCell>{attendance.yearLevel}</TableCell>
+                    <TableCell>{attendance.department}</TableCell>
+                    <TableCell>{attendance.timeIn}</TableCell>
+                    <TableCell>{attendance.timeOut}</TableCell>
+                    <TableCell>{attendance.status}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedAttendance(attendance);
+                            setIsEditOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedAttendance(attendance);
+                            setIsDeleteOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
