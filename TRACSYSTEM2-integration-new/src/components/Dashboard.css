@@ -1,0 +1,306 @@
+/* Global Font */
+body, .dashboard {
+  font-family: "Sora", sans-serif;
+}
+
+/* Layout */
+.dashboard {
+  display: flex;
+  height: 100vh;
+  background: #f9f9f9;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 80px;
+  background: #3F2305;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 20px;
+  position: relative;
+}
+
+.sidebar-logo-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  margin-bottom: 24px;
+}
+
+.sidebar-icon {
+  position: relative;
+  cursor: pointer;
+}
+
+.icon-box {
+  width: 48px;
+  height: 48px;
+  background: #ffffff;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.icon-box img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  opacity: 0.8;
+  transition: all 0.2s ease-in-out;
+}
+
+.icon-box:hover {
+  transform: scale(1.05);
+}
+.icon-box img:hover {
+  opacity: 1;
+}
+
+.sidebar-label {
+  position: absolute;
+  left: 70px;
+  top: 50%;
+  transform: translateY(-50%) translateX(-20px);
+  background: #fff;
+  border: 3px solid #3F2305;
+  color: #000000;
+  font-weight: bold;
+  font-size: 20px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 10;
+}
+
+.sidebar-icon:hover .sidebar-label {
+  opacity: 1;
+  transform: translateY(-50%) translateX(5px);
+}
+
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.trac-header {
+  background: #ffffff;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.system-title {
+  font-size: 25px;
+  font-weight: bold;
+  color: #333;
+}
+
+.welcome {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Profile Chip */
+.profile-chip {
+  display: flex;
+  align-items: center;
+  background: #f3f3f3;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 3px solid #3F2305; /* Brown border */
+  box-sizing: border-box;
+}
+
+.profile-chip:hover {
+  background: #eaeaea;
+}
+
+.profile-chip-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+}
+
+.profile-chip-name {
+  font-size: 14px;
+  color: #000000;
+}
+
+/* Content */
+.content {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card {
+  flex: 1;
+  background: #DEDEDE;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.card .label {
+  font-size: 25px;
+  color: #000000;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.card .value {
+  font-size: 75px;
+  font-weight: bold;
+}
+
+.value.green { color: #2ecc71; }
+.value.yellow { color: #f1c40f; }
+.value.red { color: #e74c3c; }
+
+/* Chart */
+.chart {
+  background: #DEDEDE;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.chart h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.bar-label {
+  width: 50px;
+  font-size: 14px;
+  color: #000000;
+}
+
+.bar-track {
+  flex: 1;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  margin: 0 12px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: #3F2305;
+  border-radius: 8px 0 0 8px;
+}
+
+.bar-value {
+  width: 40px;
+  text-align: right;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Sidebar cascade animation */
+.sidebar-icon.slide-in, .sidebar-logo.slide-in {
+  opacity: 0;
+  transform: translateX(-30px);
+  animation: sidebarSlide 0.6s forwards;
+}
+
+@keyframes sidebarSlide {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Profile chip dropdown */
+.profile-chip-container {
+  position: relative;
+}
+
+.profile-chip {
+  display: flex;
+  align-items: center;
+  background: #f3f3f3;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 3px solid #3F2305;
+  box-sizing: border-box;
+  transition: background 0.2s;
+}
+
+.profile-chip:hover {
+  background: #eaeaea;
+}
+
+.dropdown-arrow {
+  font-size: 0.7rem;
+  margin-left: 6px;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #ffffff;
+  border: 2px solid #3F2305;
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 10;
+  animation: fadeInDropdown 0.3s ease forwards;
+}
+
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #f9eacb;
+}
