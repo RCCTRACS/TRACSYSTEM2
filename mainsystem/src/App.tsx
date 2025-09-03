@@ -12,7 +12,12 @@ import SubjectManagementPage from "./pages/SubjectManagementPage";
 import DepartmentManagementPage from "./pages/DepartmentManagementPage";
 import AttendanceManagementPage from "./pages/AttendanceManagementPage";
 import StudentManagementPage from "./pages/StudentManagementPage";
-import UserManagementPage from "./pages/UserManagementPage"; // ✅ new page
+import UserManagementPage from "./pages/UserManagementPage";
+import GradeManagementPage from "./pages/GradeManagementPage";      
+import SectionManagementPage from "./pages/SectionManagementPage";   
+import StrandManagementPage from "./pages/StrandManagementPage";   
+
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +44,9 @@ const App = () => (
           <Route path="/departments" element={<DepartmentManagementPage />} />
           <Route path="/attendances" element={<AttendanceManagementPage />} />
           <Route path="/students" element={<StudentManagementPage />} />
+          <Route path="/grades" element={<GradeManagementPage />} />       
+          <Route path="/sections" element={<SectionManagementPage />} />
+          <Route path="/strands" element={<StrandManagementPage />} />
 
           {/* Catch-all for invalid routes */}
           <Route path="*" element={<NotFound />} />

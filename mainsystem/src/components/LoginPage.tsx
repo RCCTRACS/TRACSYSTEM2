@@ -15,7 +15,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('http://192.168.0.126/capstone/mainsystem/backend/login.php', {
+      const res = await fetch('http://192.168.0.122/capstone/mainsystem/backend/login.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

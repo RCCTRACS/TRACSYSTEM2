@@ -20,7 +20,7 @@ const AuthenticationPage: React.FC = () => {
 
   const sendOtp = async () => {
     try {
-      const res = await fetch('http://192.168.0.126/capstone/mainsystem/backend/send_otp.php', {
+      const res = await fetch('http://192.168.0.122/capstone/mainsystem/backend/send_otp.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: Number(userId), email })
@@ -73,7 +73,7 @@ const AuthenticationPage: React.FC = () => {
     const otp = otpValues.join('');
 
     try {
-      const res = await fetch('http://192.168.0.126/capstone/mainsystem/backend/verify_otp.php', {
+      const res = await fetch('http://192.168.0.122/capstone/mainsystem/backend/verify_otp.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: Number(userId), otp })

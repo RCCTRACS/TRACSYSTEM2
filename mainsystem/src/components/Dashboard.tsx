@@ -44,6 +44,8 @@ export const Dashboard: React.FC = () => {
 
   const [animate, setAnimate] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dateTime, setDateTime] = useState<string>("");
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,18 +53,34 @@ export const Dashboard: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // ✅ Live date and time updater (with AM/PM)
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      };
+      const dateStr = now.toLocaleDateString("en-US", options);
+      const timeStr = now.toLocaleTimeString("en-US", { hour12: true }); // ✅ AM/PM
+
+      setDateTime(`${dateStr} | ${timeStr}`);
+    };
+
+    updateDateTime(); // run immediately
+    const interval = setInterval(updateDateTime, 1000); // update every second
+    return () => clearInterval(interval);
+  }, []);
+
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 
   const handleLogout = () => {
-    // ✅ Clear both storages
     localStorage.clear();
     sessionStorage.removeItem("sidebarHasAnimated");
-
-    // ✅ Close dropdown
     setDropdownOpen(false);
-
-    // ✅ Redirect user safely
-    navigate("/"); // change this if you have a dedicated LoginPage
+    navigate("/");
   };
 
   return (
@@ -114,7 +132,15 @@ export const Dashboard: React.FC = () => {
 
           {/* Chart */}
           <div className="chart">
-            <h3>Total Attendance: June 16, 2025</h3>
+            <h3
+              style={{
+                fontSize: "22px",
+                fontWeight: "700",
+                marginBottom: "15px",
+              }}
+            >
+              Total Attendance: {dateTime}
+            </h3>
             {data.map((item) => (
               <div key={item.grade} className="bar-row">
                 <span className="bar-label">{item.grade}</span>
@@ -138,3 +164,4 @@ export const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+  
