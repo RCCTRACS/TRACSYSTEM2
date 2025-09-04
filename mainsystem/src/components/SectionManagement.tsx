@@ -21,12 +21,16 @@ import { DeleteSectionDialog } from "./DeleteSectionDialog";
 import { ExportSectionDialog } from "./ExportSectionDialog";
 import { FilterSectionDialog } from "./FilterSectionDialog";
 import { BulkUploadSection } from "./BulkUploadSection";
+import { useNotifier } from "@/components/ToastNotifier"; // ✅ toast hook
 
 export interface Section {
   id: string;
-  section: string;
+  section: string; // e.g., "7 - Apple"
   type: string;
 }
+
+const API_URL =
+  "http://192.168.0.122/capstone/mainsystem/backend/section_api.php";
 
 export function SectionManagement() {
   const [sections, setSections] = useState<Section[]>([]);
@@ -41,12 +45,27 @@ export function SectionManagement() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
+  const notifier = useNotifier("Section"); // ✅ toast notifier
+
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
+  // --- Fetch Sections from API ---
+  const fetchSections = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setSections(data);
+      setFilteredSections(data);
+    } catch (err) {
+      notifier.error("Failed to fetch sections");
+      console.error("Failed to fetch sections:", err);
+    }
+  };
+
   useEffect(() => {
-    setFilteredSections(sections);
-  }, [sections]);
+    fetchSections();
+  }, []);
 
   // --- Search ---
   const handleSearch = (term: string) => {
@@ -64,19 +83,29 @@ export function SectionManagement() {
   };
 
   // --- Add/Edit ---
-  const handleSaveSection = (sectionData: Partial<Section>) => {
-    if (selectedSection) {
-      const updatedSections = sections.map((s) =>
-        s.id === selectedSection.id ? { ...s, ...sectionData } : s
-      );
-      setSections(updatedSections);
-    } else {
-      const newSection: Section = {
-        id: Date.now().toString(),
-        section: sectionData.section || "",
-        type: sectionData.type || "",
-      };
-      setSections((prev) => [...prev, newSection]);
+  const handleSaveSection = async (sectionData: Partial<Section>) => {
+    try {
+      if (selectedSection) {
+        // Update existing
+        await fetch(`${API_URL}?id=${selectedSection.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sectionData),
+        });
+        notifier.updated();
+      } else {
+        // Add new
+        await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sectionData),
+        });
+        notifier.added();
+      }
+      await fetchSections();
+    } catch (err) {
+      notifier.error("Failed to save section");
+      console.error("Failed to save section:", err);
     }
 
     setIsAddOpen(false);
@@ -94,10 +123,18 @@ export function SectionManagement() {
     setIsDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedSection) {
-      const remaining = sections.filter((s) => s.id !== selectedSection.id);
-      setSections(remaining);
+      try {
+        await fetch(`${API_URL}?id=${selectedSection.id}`, {
+          method: "DELETE",
+        });
+        notifier.deleted();
+        await fetchSections();
+      } catch (err) {
+        notifier.error("Failed to delete section");
+        console.error("Failed to delete section:", err);
+      }
       setIsDeleteOpen(false);
       setSelectedSection(null);
     }
@@ -113,11 +150,37 @@ export function SectionManagement() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    notifier.exported();
   };
 
   // --- Bulk Upload ---
-  const handleBulkUpload = (newSections: Section[]) => {
-    setSections((prev) => [...prev, ...newSections]); // append to existing
+  const handleBulkUpload = async (newSections: Section[]) => {
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bulk: newSections }),
+      });
+      notifier.bulkUploaded();
+      await fetchSections();
+    } catch (err) {
+      notifier.error("Bulk upload failed");
+      console.error("Bulk upload failed:", err);
+    }
+  };
+
+  // --- Filter by Grade (7–10 only) ---
+  const handleFilter = (grade: string) => {
+    if (grade === "All") {
+      setFilteredSections(sections);
+    } else {
+      const gradeNumber = grade.replace("Grade ", ""); // "Grade 7" -> "7"
+      const filtered = sections.filter((s) =>
+        s.section.startsWith(gradeNumber + " ")
+      );
+      setFilteredSections(filtered);
+    }
   };
 
   return (
@@ -168,7 +231,10 @@ export function SectionManagement() {
           </Dialog>
 
           {/* Download Template */}
-          <Button className={outlineDarkBrownBtn} onClick={handleDownloadTemplate}>
+          <Button
+            className={outlineDarkBrownBtn}
+            onClick={handleDownloadTemplate}
+          >
             <Download className="h-4 w-4 mr-2" />
             Download Template
           </Button>
@@ -210,15 +276,8 @@ export function SectionManagement() {
               </Button>
             </DialogTrigger>
             <FilterSectionDialog
-              sectionTypes={["All", "Regular", "Special", "Elective"]}
-              onFilter={(type) => {
-                if (type === "All") {
-                  setFilteredSections(sections);
-                } else {
-                  const filtered = sections.filter((s) => s.type === type);
-                  setFilteredSections(filtered);
-                }
-              }}
+              sections={sections.map((s) => s.section)}
+              onFilter={handleFilter}
               onClose={() => setIsFilterOpen(false)}
             />
           </Dialog>

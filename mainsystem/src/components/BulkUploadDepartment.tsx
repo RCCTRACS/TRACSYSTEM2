@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import {
   DialogContent,
@@ -8,58 +10,43 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
-import Papa from "papaparse";
-import { Department } from "./DepartmentManagement";
 
 interface BulkUploadDepartmentProps {
-  onUpload: (departments: Department[]) => void;
+  onUpload: (file: File) => Promise<void> | void;
   onClose: () => void;
 }
 
-export function BulkUploadDepartment({ onUpload, onClose }: BulkUploadDepartmentProps) {
+export function BulkUploadDepartment({
+  onUpload,
+  onClose,
+}: BulkUploadDepartmentProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
-  const handleUpload = () => {
-    if (!file) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+      setError("");
+    }
+  };
 
-    setError("");
-    const reader = new FileReader();
+  const handleUpload = async () => {
+    if (!file) {
+      setError("Please select a file before uploading.");
+      return;
+    }
 
-    reader.onload = (e) => {
-      const text = e.target?.result;
-      if (typeof text !== "string") return;
-
-      Papa.parse<Department>(text, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          const expectedHeaders = ["department", "type"];
-          const headers = results.meta.fields || [];
-          const isValid = expectedHeaders.every(h => headers.includes(h));
-
-          if (!isValid) {
-            setError(`CSV headers must be: ${expectedHeaders.join(", ")}`);
-            return;
-          }
-
-          const newDepartments: Department[] = results.data.map((row) => ({
-            id: Date.now().toString() + Math.random().toString(36).slice(2),
-            department: row.department || "",
-            type: row.type || "",
-          }));
-
-          onUpload(newDepartments);
-          setFile(null);
-          onClose();
-        },
-        error: (err) => {
-          setError("Error parsing file: " + err.message);
-        },
-      });
-    };
-
-    reader.readAsText(file);
+    try {
+      setLoading(true);
+      await onUpload(file);
+      setFile(null);
+      onClose();
+    } catch {
+      setError("Upload failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,9 +63,10 @@ export function BulkUploadDepartment({ onUpload, onClose }: BulkUploadDepartment
           <Label className="font-bold text-black">Choose File</Label>
           <Input
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx"
             className="w-full rounded-lg border-[3px] border-[#3E1F0F] focus:border-[#3E1F0F] focus:ring-1 focus:ring-[#3E1F0F]"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            onChange={handleFileChange}
+            disabled={loading}
           />
           <p className="text-xs text-muted-foreground">
             {file ? file.name : "No file chosen"}
@@ -91,17 +79,22 @@ export function BulkUploadDepartment({ onUpload, onClose }: BulkUploadDepartment
           <Button
             variant="outline"
             className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200 rounded-lg"
-            onClick={() => { setFile(null); setError(""); onClose(); }}
+            onClick={() => {
+              setFile(null);
+              setError("");
+              onClose();
+            }}
+            disabled={loading}
           >
             Cancel
           </Button>
           <Button
             className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200 rounded-lg flex items-center"
             onClick={handleUpload}
-            disabled={!file}
+            disabled={!file || loading}
           >
             <Upload className="h-4 w-4 mr-2" />
-            Upload
+            {loading ? "Uploading..." : "Upload"}
           </Button>
         </div>
       </div>

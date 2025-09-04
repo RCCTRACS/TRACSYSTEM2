@@ -12,20 +12,20 @@ import { useState } from "react";
 import { Filter } from "lucide-react";
 
 interface FilterStrandDialogProps {
-  strandTypes: string[];
-  onFilter: (type: string) => void;
+  onFilter: (strand: string) => void;
   onClose: () => void;
 }
 
 export function FilterStrandDialog({
-  strandTypes,
   onFilter,
   onClose,
 }: FilterStrandDialogProps) {
-  const [selectedType, setSelectedType] = useState("All");
+  // ✅ Fixed allowed strands
+  const availableStrands = ["All", "STEM", "ABM", "HUMSS", "GAS"];
+  const [selectedStrand, setSelectedStrand] = useState("All");
 
   const handleApplyFilter = () => {
-    onFilter(selectedType);
+    onFilter(selectedStrand);
     onClose();
   };
 
@@ -35,23 +35,23 @@ export function FilterStrandDialog({
         <Filter className="h-10 w-10 text-[#5C4033]" />
         <DialogTitle>Filter Strands</DialogTitle>
         <DialogDescription>
-          Select a strand type to filter the list. <br />
+          Select a strand to filter the list. <br />
           Default is <span className="font-semibold">All</span>.
         </DialogDescription>
       </DialogHeader>
 
       <div className="mt-4 space-y-3">
-        {strandTypes.map((type) => (
+        {availableStrands.map((strand) => (
           <div
-            key={type}
-            onClick={() => setSelectedType(type)}
-            className={`cursor-pointer px-4 py-2 rounded-md border ${
-              selectedType === type
+            key={strand}
+            onClick={() => setSelectedStrand(strand)}
+            className={`cursor-pointer px-4 py-2 rounded-md border transition-colors ${
+              selectedStrand === strand
                 ? "bg-[#5C4033] text-white"
                 : "bg-gray-100 hover:bg-gray-200"
             }`}
           >
-            {type}
+            {strand}
           </div>
         ))}
       </div>

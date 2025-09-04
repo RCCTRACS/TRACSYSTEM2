@@ -4,7 +4,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Search,
   Plus,
@@ -20,10 +26,11 @@ import { GradeFormDialog } from "./GradeFormDialog";
 import { DeleteGradeDialog } from "./DeleteGradeDialog";
 import { BulkUploadGrade } from "./BulkUploadGrade";
 import { FilterGradeDialog } from "./FilterGradeDialog";
+import { useToast } from "@/components/ui/use-toast";
 
 export interface Grade {
-  id: string;
-  grade: string;
+  id: number;
+  grade_name: string;
   type: string;
 }
 
@@ -40,13 +47,33 @@ export function GradeManagement() {
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
 
+  const { toast } = useToast();
+
+  const API_URL =
+    "http://192.168.0.122/capstone/mainsystem/backend/grade_api.php";
+
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
-  // Keep filteredGrades in sync with grades
+  // --- Fetch from backend ---
+  const fetchGrades = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setGrades(data);
+      setFilteredGrades(data);
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to load grades.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
-    setFilteredGrades(grades);
-  }, [grades]);
+    fetchGrades();
+  }, []);
 
   // --- Search ---
   const handleSearch = (term: string) => {
@@ -57,26 +84,56 @@ export function GradeManagement() {
     }
     const searchFiltered = grades.filter(
       (g) =>
-        g.grade.toLowerCase().includes(term.toLowerCase()) ||
+        g.grade_name.toLowerCase().includes(term.toLowerCase()) ||
         g.type.toLowerCase().includes(term.toLowerCase())
     );
     setFilteredGrades(searchFiltered);
   };
 
-  // --- Add/Edit ---
-  const handleSaveGrade = (gradeData: Partial<Grade>) => {
-    if (selectedGrade) {
-      const updatedGrades = grades.map((g) =>
-        g.id === selectedGrade.id ? { ...g, ...gradeData } : g
-      );
-      setGrades(updatedGrades);
-    } else {
-      const newGrade: Grade = {
-        id: Date.now().toString(),
-        grade: gradeData.grade || "",
-        type: gradeData.type || "",
-      };
-      setGrades((prev) => [...prev, newGrade]);
+  // --- Add/Edit (API) ---
+  const handleSaveGrade = async (gradeData: Partial<Grade>) => {
+    try {
+      if (selectedGrade) {
+        // Update
+        const res = await fetch(API_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: selectedGrade.id,
+            grade_name: gradeData.grade_name,
+            type: gradeData.type || "Student",
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast({
+            title: "Updated",
+            description: "Grade updated successfully!",
+          });
+          fetchGrades();
+        } else throw new Error(data.error);
+      } else {
+        // Add
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            grade_name: gradeData.grade_name,
+            type: gradeData.type || "Student",
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast({ title: "Success", description: "Grade added successfully!" });
+          fetchGrades();
+        } else throw new Error(data.error);
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
 
     setIsAddOpen(false);
@@ -89,23 +146,43 @@ export function GradeManagement() {
     setIsEditOpen(true);
   };
 
+  // --- Delete (API) ---
   const handleDeleteGrade = (grade: Grade) => {
     setSelectedGrade(grade);
     setIsDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedGrade) {
-      const remaining = grades.filter((g) => g.id !== selectedGrade.id);
-      setGrades(remaining);
-      setIsDeleteOpen(false);
-      setSelectedGrade(null);
+  const handleConfirmDelete = async () => {
+    if (!selectedGrade) return;
+    try {
+      const res = await fetch(API_URL, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedGrade.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({
+          title: "Deleted",
+          description: "Grade deleted successfully!",
+        });
+        fetchGrades();
+      } else throw new Error(data.error);
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
+
+    setIsDeleteOpen(false);
+    setSelectedGrade(null);
   };
 
   // --- Download Template ---
   const handleDownloadTemplate = () => {
-    const headers = ["grade", "type"];
+    const headers = ["grade_name", "type"];
     const csvContent = headers.join(",") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -116,35 +193,42 @@ export function GradeManagement() {
     document.body.removeChild(link);
   };
 
-  // --- Bulk Upload ---
+  // --- Bulk Upload (API) ---
   const handleBulkUpload = async (file: File) => {
     const text = await file.text();
     const rows = text.split("\n").filter((row) => row.trim() !== "");
     const headers = rows[0].split(",").map((h) => h.trim().toLowerCase());
 
-    if (!(headers.includes("grade") && headers.includes("type"))) {
-      alert("Invalid file format. Please use the template provided.");
+    if (!(headers.includes("grade_name") && headers.includes("type"))) {
+      toast({
+        title: "Error",
+        description: "Invalid file format.",
+        variant: "destructive",
+      });
       return;
     }
 
-    const newGrades: Grade[] = rows.slice(1).map((row) => {
+    for (let row of rows.slice(1)) {
       const cols = row.split(",");
-      const gradeIndex = headers.indexOf("grade");
-      const typeIndex = headers.indexOf("type");
-      return {
-        id: Date.now().toString() + Math.random().toString(36).slice(2),
-        grade: cols[gradeIndex]?.trim() || "",
-        type: cols[typeIndex]?.trim() || "",
-      };
-    });
+      const grade_name = cols[headers.indexOf("grade_name")]?.trim();
+      const type = cols[headers.indexOf("type")]?.trim() || "Student";
+      if (grade_name) {
+        await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ grade_name, type }),
+        });
+      }
+    }
 
-    setGrades((prev) => [...prev, ...newGrades]);
+    toast({ title: "Success", description: "Bulk upload completed!" });
+    fetchGrades();
   };
 
   // --- Export CSV ---
   const handleExportCSV = () => {
-    const headers = ["grade", "type"];
-    const rows = filteredGrades.map((g) => [g.grade, g.type]);
+    const headers = ["grade_name", "type"];
+    const rows = filteredGrades.map((g) => [g.grade_name, g.type]);
     const csvContent = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -204,7 +288,10 @@ export function GradeManagement() {
           </Dialog>
 
           {/* Download Template */}
-          <Button className={outlineDarkBrownBtn} onClick={handleDownloadTemplate}>
+          <Button
+            className={outlineDarkBrownBtn}
+            onClick={handleDownloadTemplate}
+          >
             <Download className="h-4 w-4 mr-2" />
             Download Template
           </Button>
@@ -271,12 +358,22 @@ export function GradeManagement() {
               </Button>
             </DialogTrigger>
             <FilterGradeDialog
-              gradeLevels={["All", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"]}
+              gradeLevels={[
+                "All",
+                "Grade 7",
+                "Grade 8",
+                "Grade 9",
+                "Grade 10",
+                "Grade 11",
+                "Grade 12",
+              ]}
               onFilter={(grade) => {
                 if (grade === "All") {
                   setFilteredGrades(grades);
                 } else {
-                  setFilteredGrades(grades.filter((g) => g.grade === grade));
+                  setFilteredGrades(
+                    grades.filter((g) => g.grade_name === grade)
+                  );
                 }
               }}
               onClose={() => setIsFilterOpen(false)}
@@ -306,7 +403,7 @@ export function GradeManagement() {
                   key={grade.id}
                   className="grid grid-cols-3 gap-x-6 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
-                  <div className="font-medium">{grade.grade}</div>
+                  <div className="font-medium">{grade.grade_name}</div>
                   <div>{grade.type}</div>
                   <div className="flex justify-center gap-2">
                     <Button
@@ -346,7 +443,7 @@ export function GradeManagement() {
       {/* Delete Grade Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DeleteGradeDialog
-          gradeName={selectedGrade?.grade || ""}
+          gradeName={selectedGrade?.grade_name || ""}
           onClose={() => {
             setIsDeleteOpen(false);
             setSelectedGrade(null);

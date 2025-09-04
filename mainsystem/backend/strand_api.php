@@ -17,17 +17,26 @@ if ($method === "OPTIONS") {
 
 switch ($method) {
     case "GET":
-        // --- Search & Filter ---
-        $search = isset($_GET["search"]) ? $conn->real_escape_string($_GET["search"]) : "";
-        $filter = isset($_GET["filter"]) ? $conn->real_escape_string($_GET["filter"]) : "";
+        // --- Search & Filter by grade + strand ---
+        $search       = isset($_GET["search"]) ? $conn->real_escape_string($_GET["search"]) : "";
+        $filterStrand = isset($_GET["filterStrand"]) ? $conn->real_escape_string($_GET["filterStrand"]) : "";
+        $grade        = isset($_GET["grade"]) ? $conn->real_escape_string($_GET["grade"]) : "";
 
         $sql = "SELECT * FROM strands WHERE 1";
 
+        // 🔍 Search anywhere in strand name
         if (!empty($search)) {
-            $sql .= " AND (strand LIKE '%$search%' OR type LIKE '%$search%')";
+            $sql .= " AND strand LIKE '%$search%'";
         }
-        if (!empty($filter) && $filter !== "All") {
-            $sql .= " AND type = '$filter'";
+
+        // 🎓 Filter by grade level (11 / 12)
+        if (!empty($grade) && $grade !== "All") {
+            $sql .= " AND strand LIKE '$grade -%'";
+        }
+
+        // 🧭 Filter by strand name (STEM, ABM, GAS, HUMSS, etc.)
+        if (!empty($filterStrand) && $filterStrand !== "All") {
+            $sql .= " AND strand LIKE '%$filterStrand%'";
         }
 
         $result = $conn->query($sql);
@@ -63,20 +72,19 @@ switch ($method) {
             $skipped  = 0;
             $insertedRows = [];
 
-            $stmtCheck  = $conn->prepare("SELECT id FROM strands WHERE strand = ? AND type = ?");
-            $stmtInsert = $conn->prepare("INSERT INTO strands (strand, type) VALUES (?, ?)");
+            $stmtCheck  = $conn->prepare("SELECT id FROM strands WHERE strand = ?");
+            $stmtInsert = $conn->prepare("INSERT INTO strands (strand, type) VALUES (?, 'Academic')");
 
             foreach ($bulkRows as $row) {
                 $strand = trim($row["strand"] ?? "");
-                $type   = trim($row["type"] ?? "");
 
-                if ($strand === "" || $type === "") {
+                if ($strand === "") {
                     $skipped++;
                     continue;
                 }
 
                 // ✅ Check duplicate
-                $stmtCheck->bind_param("ss", $strand, $type);
+                $stmtCheck->bind_param("s", $strand);
                 $stmtCheck->execute();
                 $stmtCheck->store_result();
 
@@ -86,13 +94,13 @@ switch ($method) {
                 }
 
                 // ✅ Insert
-                $stmtInsert->bind_param("ss", $strand, $type);
+                $stmtInsert->bind_param("s", $strand);
                 if ($stmtInsert->execute()) {
                     $inserted++;
                     $insertedRows[] = [
                         "id"     => $conn->insert_id,
                         "strand" => $strand,
-                        "type"   => $type
+                        "type"   => "Academic"
                     ];
                 }
             }
@@ -104,22 +112,21 @@ switch ($method) {
                 "rows"     => $insertedRows,
                 "message"  => "$inserted strands inserted, $skipped skipped."
             ]);
-            exit(); // 🚨 prevent single insert code from running
+            exit();
         }
 
         // --- Single Add Strand ---
         $strand = trim($data["strand"] ?? "");
-        $type   = trim($data["type"] ?? "");
 
-        if ($strand === "" || $type === "") {
+        if ($strand === "") {
             http_response_code(400);
-            echo json_encode(["error" => "Missing strand or type"]);
+            echo json_encode(["error" => "Missing strand"]);
             exit();
         }
 
         // ✅ Prevent duplicate
-        $stmtCheck = $conn->prepare("SELECT id FROM strands WHERE strand = ? AND type = ?");
-        $stmtCheck->bind_param("ss", $strand, $type);
+        $stmtCheck = $conn->prepare("SELECT id FROM strands WHERE strand = ?");
+        $stmtCheck->bind_param("s", $strand);
         $stmtCheck->execute();
         $stmtCheck->store_result();
 
@@ -129,14 +136,14 @@ switch ($method) {
             exit();
         }
 
-        $stmt = $conn->prepare("INSERT INTO strands (strand, type) VALUES (?, ?)");
-        $stmt->bind_param("ss", $strand, $type);
+        $stmt = $conn->prepare("INSERT INTO strands (strand, type) VALUES (?, 'Academic')");
+        $stmt->bind_param("s", $strand);
         if ($stmt->execute()) {
             echo json_encode([
                 "success" => true,
                 "id"      => $conn->insert_id,
                 "strand"  => $strand,
-                "type"    => $type
+                "type"    => "Academic"
             ]);
         } else {
             http_response_code(500);
@@ -156,16 +163,15 @@ switch ($method) {
 
         $id     = intval($data["id"] ?? 0);
         $strand = trim($data["strand"] ?? "");
-        $type   = trim($data["type"] ?? "");
 
-        if ($id <= 0 || $strand === "" || $type === "") {
+        if ($id <= 0 || $strand === "") {
             http_response_code(400);
             echo json_encode(["error" => "Missing fields"]);
             exit();
         }
 
-        $stmt = $conn->prepare("UPDATE strands SET strand=?, type=? WHERE id=?");
-        $stmt->bind_param("ssi", $strand, $type, $id);
+        $stmt = $conn->prepare("UPDATE strands SET strand=?, type='Academic' WHERE id=?");
+        $stmt->bind_param("si", $strand, $id);
         if ($stmt->execute()) {
             echo json_encode(["success" => true]);
         } else {

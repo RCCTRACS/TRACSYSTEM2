@@ -20,12 +20,15 @@ import { StrandFormDialog } from "./StrandFormDialog";
 import { DeleteStrandDialog } from "./DeleteStrandDialog";
 import { BulkUploadStrand } from "./BulkUploadStrand";
 import { FilterStrandDialog } from "./FilterStrandDialog";
-import { ExportStrandDialog } from "./ExportStrandDialog"; // ✅ Import
+import { ExportStrandDialog } from "./ExportStrandDialog";
+
+// ✅ Toast import
+import { useToast } from "@/components/ui/use-toast";
 
 export interface Strand {
   id: string;
   strand: string;
-  type: string;
+  type: string; // always "Academic"
 }
 
 const API_URL = "http://192.168.0.122/capstone/mainsystem/backend/strand_api.php";
@@ -41,7 +44,9 @@ export function StrandManagement() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
-  const [isExportOpen, setIsExportOpen] = useState(false); // ✅ New state
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
+  const { toast } = useToast();
 
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
@@ -55,6 +60,11 @@ export function StrandManagement() {
       setFilteredStrands(data);
     } catch (err) {
       console.error("Error loading strands:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load strands.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -71,6 +81,11 @@ export function StrandManagement() {
       setFilteredStrands(data);
     } catch (err) {
       console.error("Search error:", err);
+      toast({
+        title: "Error",
+        description: "Search failed. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -85,16 +100,18 @@ export function StrandManagement() {
           body: JSON.stringify({
             id: selectedStrand.id,
             strand: strandData.strand,
-            type: strandData.type,
+            type: "Academic",
           }),
         });
+        toast({ title: "Updated", description: "Strand updated successfully!" });
       } else {
         // Add
         await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(strandData),
+          body: JSON.stringify({ ...strandData, type: "Academic" }),
         });
+        toast({ title: "Added", description: "Strand added successfully!" });
       }
 
       await loadStrands();
@@ -103,6 +120,11 @@ export function StrandManagement() {
       setSelectedStrand(null);
     } catch (err) {
       console.error("Save error:", err);
+      toast({
+        title: "Error",
+        description: "Failed to save strand.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -129,14 +151,20 @@ export function StrandManagement() {
       await loadStrands();
       setIsDeleteOpen(false);
       setSelectedStrand(null);
+      toast({ title: "Deleted", description: "Strand deleted successfully!" });
     } catch (err) {
       console.error("Delete error:", err);
+      toast({
+        title: "Error",
+        description: "Failed to delete strand.",
+        variant: "destructive",
+      });
     }
   };
 
   // --- Download Template ---
   const handleDownloadTemplate = () => {
-    const csvContent = "strand,type\n";
+    const csvContent = "strand,type\nSample Strand,Academic\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -144,6 +172,8 @@ export function StrandManagement() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    toast({ title: "Downloaded", description: "Template downloaded successfully." });
   };
 
   return (
@@ -212,14 +242,10 @@ export function StrandManagement() {
             </DialogTrigger>
             <BulkUploadStrand
               onUpload={async (newStrands) => {
-                const cleaned = newStrands.filter(
-                  (s) => s.strand.trim() !== "" && s.type.trim() !== ""
-                );
-
-                if (cleaned.length === 0) {
-                  alert("No valid strands to upload.");
-                  return;
-                }
+                const cleaned = newStrands.map((s) => ({
+                  ...s,
+                  type: "Academic",
+                }));
 
                 try {
                   const res = await fetch(`${API_URL}?bulk=1`, {
@@ -231,23 +257,32 @@ export function StrandManagement() {
                   const result = await res.json();
 
                   if (result.success) {
-                    alert(
-                      `Uploaded ${result.inserted} strands (${result.skipped} skipped)`
-                    );
+                    toast({
+                      title: "Bulk Upload Complete",
+                      description: `Uploaded ${result.inserted} strands (${result.skipped} skipped)`,
+                    });
                     await loadStrands();
                   } else {
-                    alert(result.error || "Bulk upload failed.");
+                    toast({
+                      title: "Bulk Upload Failed",
+                      description: result.error || "Some records could not be uploaded.",
+                      variant: "destructive",
+                    });
                   }
                 } catch (err) {
                   console.error("Bulk upload error:", err);
-                  alert("Network error while uploading.");
+                  toast({
+                    title: "Error",
+                    description: "Network error while uploading.",
+                    variant: "destructive",
+                  });
                 }
               }}
               onClose={() => setIsBulkUploadOpen(false)}
             />
           </Dialog>
 
-          {/* Export (open dialog) */}
+          {/* Export */}
           <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
             <DialogTrigger asChild>
               <Button className={outlineDarkBrownBtn}>
@@ -270,18 +305,11 @@ export function StrandManagement() {
               </Button>
             </DialogTrigger>
             <FilterStrandDialog
-              strandTypes={[
-                "All",
-                "Academic",
-                "Technical-Vocational",
-                "Sports",
-                "Arts & Design",
-              ]}
-              onFilter={async (type) => {
+              onFilter={async (strand) => {
                 const url =
-                  type === "All"
+                  strand === "All"
                     ? API_URL
-                    : `${API_URL}?filter=${encodeURIComponent(type)}`;
+                    : `${API_URL}?filterStrand=${encodeURIComponent(strand)}`;
                 const res = await fetch(url);
                 const data = await res.json();
                 setFilteredStrands(data);
@@ -314,7 +342,7 @@ export function StrandManagement() {
                   className="grid grid-cols-3 gap-x-6 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
                   <div className="font-medium">{strand.strand}</div>
-                  <div>{strand.type}</div>
+                  <div>Academic</div>
                   <div className="flex justify-center gap-2">
                     <Button
                       variant="ghost"

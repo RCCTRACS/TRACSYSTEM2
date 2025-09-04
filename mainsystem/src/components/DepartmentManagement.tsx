@@ -1,20 +1,33 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Plus, Filter, Download, Upload, Edit, Trash2, Building2 } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Filter,
+  Download,
+  Upload,
+  Edit,
+  Trash2,
+  Building2,
+} from "lucide-react";
 
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
 import { DeleteDepartmentDialog } from "./DeleteDepartmentDialog";
-import { FilterDepartmentDialog } from "./FilterDepartmentDialog"; // updated import
+import { FilterDepartmentDialog } from "./FilterDepartmentDialog";
 import { ExportDialog } from "./ExportDepartmentDialog";
 import { BulkUploadDepartment } from "./BulkUploadDepartment";
+
+import { toast } from "sonner";
 
 export interface Department {
   id: string;
   department: string;
-  type: string;
+  type: string; // "Student" | "Employee"
 }
 
 export function DepartmentManagement() {
@@ -33,6 +46,17 @@ export function DepartmentManagement() {
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
+  // ✅ Fetch from PHP API
+  useEffect(() => {
+    fetch("http://localhost/capstone/mainsystem/backend/department_api.php")
+      .then((res) => res.json())
+      .then((data) => {
+        setDepartments(data);
+        setFilteredDepartments(data);
+      })
+      .catch(() => toast.error("Failed to load departments"));
+  }, []);
+
   // --- Search filter ---
   const handleSearch = (term: string) => {
     setSearchTerm(term);
@@ -44,7 +68,7 @@ export function DepartmentManagement() {
     setFilteredDepartments(searchFiltered);
   };
 
-  // --- Filter by type (Employee / Student / All) ---
+  // --- Filter by type ---
   const handleFilter = (type: string) => {
     if (type === "All") {
       setFilteredDepartments(departments);
@@ -52,36 +76,59 @@ export function DepartmentManagement() {
       const filtered = departments.filter((dep) => dep.type === type);
       setFilteredDepartments(filtered);
     }
+    toast.info(type === "All" ? "Showing all departments" : `Filtered by ${type}`);
   };
 
   // --- Add/Edit Department ---
   const handleSaveDepartment = (depData: Partial<Department>) => {
     if (selectedDepartment) {
-      const updatedDepartments = departments.map((d) =>
-        d.id === selectedDepartment.id ? { ...d, ...depData } : d
-      );
-      setDepartments(updatedDepartments);
-      setFilteredDepartments(updatedDepartments);
+      // ✅ Update existing (PUT)
+      fetch(
+        `http://localhost/capstone/mainsystem/backend/department_api.php?id=${selectedDepartment.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(depData),
+        }
+      )
+        .then((res) => res.json())
+        .then(() => {
+          const updatedDepartments = departments.map((d) =>
+            d.id === selectedDepartment.id ? { ...d, ...depData } : d
+          );
+          setDepartments(updatedDepartments);
+          setFilteredDepartments(updatedDepartments);
+          toast.success(`Department "${depData.department}" updated successfully`);
+        })
+        .catch(() => toast.error("Failed to update department"));
     } else {
-      const newDepartment: Department = {
-        id: Date.now().toString(),
-        department: depData.department || "",
-        type: depData.type || "",
-      };
-      const updatedDepartments = [...departments, newDepartment];
-      setDepartments(updatedDepartments);
-      setFilteredDepartments(updatedDepartments);
+      // ✅ Add new (POST)
+      fetch("http://localhost/capstone/mainsystem/backend/department_api.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(depData),
+      })
+        .then((res) => res.json())
+        .then((newDepartment) => {
+          const updatedDepartments = [...departments, newDepartment];
+          setDepartments(updatedDepartments);
+          setFilteredDepartments(updatedDepartments);
+          toast.success(`Department "${newDepartment.department}" added successfully`);
+        })
+        .catch(() => toast.error("Failed to add department"));
     }
     setIsAddDepartmentOpen(false);
     setIsEditDepartmentOpen(false);
     setSelectedDepartment(null);
   };
 
+  // --- Edit handler ---
   const handleEditDepartment = (dep: Department) => {
     setSelectedDepartment(dep);
     setIsEditDepartmentOpen(true);
   };
 
+  // --- Delete handler ---
   const handleDeleteDepartment = (dep: Department) => {
     setSelectedDepartment(dep);
     setIsDeleteDepartmentOpen(true);
@@ -89,17 +136,28 @@ export function DepartmentManagement() {
 
   const handleConfirmDelete = () => {
     if (selectedDepartment) {
-      const remaining = departments.filter((d) => d.id !== selectedDepartment.id);
-      setDepartments(remaining);
-      setFilteredDepartments(remaining);
+      // ✅ Delete (DELETE)
+      fetch(
+        `http://localhost/capstone/mainsystem/backend/department_api.php?id=${selectedDepartment.id}`,
+        {
+          method: "DELETE",
+        }
+      )
+        .then(() => {
+          const remaining = departments.filter((d) => d.id !== selectedDepartment.id);
+          setDepartments(remaining);
+          setFilteredDepartments(remaining);
+          toast.success(`Department "${selectedDepartment.department}" deleted`);
+        })
+        .catch(() => toast.error("Failed to delete department"));
       setIsDeleteDepartmentOpen(false);
       setSelectedDepartment(null);
     }
   };
 
-  // --- Download Template ---
+  // --- Download Template (Only Department + Type) ---
   const handleDownloadTemplate = () => {
-    const csvContent = "id,department,type\n";
+    const csvContent = "department,type (Student|Employee)\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -107,6 +165,7 @@ export function DepartmentManagement() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Template downloaded successfully");
   };
 
   return (
@@ -176,6 +235,7 @@ export function DepartmentManagement() {
                 const updated = [...departments, ...newDeps];
                 setDepartments(updated);
                 setFilteredDepartments(updated);
+                toast.success("Departments uploaded successfully");
               }}
               onClose={() => setIsBulkUploadOpen(false)}
             />
@@ -191,7 +251,10 @@ export function DepartmentManagement() {
             </DialogTrigger>
             <ExportDialog
               departments={filteredDepartments}
-              onClose={() => setIsExportOpen(false)}
+              onClose={() => {
+                setIsExportOpen(false);
+                toast.success("Departments exported successfully");
+              }}
             />
           </Dialog>
 

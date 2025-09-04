@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,26 +21,34 @@ export function DepartmentFormDialog({
 }: DepartmentFormDialogProps) {
   const [formData, setFormData] = useState({
     department: "",
-    type: "",
+    type: "Student", // default type is Student
   });
 
   useEffect(() => {
     if (department) {
+      // editing mode
       setFormData({
         department: department.department,
         type: department.type,
       });
     } else {
+      // add mode
       setFormData({
         department: "",
-        type: "",
+        type: "Student",
       });
     }
   }, [department]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+
+    // Preserve ID when editing
+    const payload = department
+      ? { id: department.id, ...formData }
+      : formData;
+
+    onSave(payload);
   };
 
   const outlineClass =
@@ -69,20 +79,23 @@ export function DepartmentFormDialog({
           />
         </div>
 
-        {/* Type */}
+        {/* Type Dropdown */}
         <div className="space-y-2">
           <Label htmlFor="type" className="font-bold text-black">
             Type
           </Label>
-          <Input
+          <select
             id="type"
             value={formData.type}
             onChange={(e) =>
               setFormData({ ...formData, type: e.target.value })
             }
             required
-            className={outlineClass}
-          />
+            className={`${outlineClass} bg-white`}
+          >
+            <option value="Student">Student</option>
+            <option value="Employee">Employee</option>
+          </select>
         </div>
 
         {/* Buttons */}

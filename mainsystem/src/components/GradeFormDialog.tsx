@@ -12,8 +12,8 @@ import {
 
 interface Grade {
   id: string;
-  grade: string;
-  type: string;
+  grade_name: string;
+  type?: string;
 }
 
 interface GradeFormDialogProps {
@@ -28,19 +28,19 @@ export function GradeFormDialog({
   onClose,
 }: GradeFormDialogProps) {
   const [formData, setFormData] = useState({
-    grade: "",
+    grade_name: "",
     type: "",
   });
 
   useEffect(() => {
     if (grade) {
       setFormData({
-        grade: grade.grade,
-        type: grade.type,
+        grade_name: grade.grade_name,
+        type: grade.type || "",
       });
     } else {
       setFormData({
-        grade: "",
+        grade_name: "",
         type: "",
       });
     }
@@ -48,7 +48,12 @@ export function GradeFormDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    // remove type if empty so backend treats it as NULL
+    const payload = {
+      grade_name: formData.grade_name,
+      ...(formData.type ? { type: formData.type } : {}),
+    };
+    onSave(payload);
   };
 
   const outlineClass =
@@ -63,26 +68,26 @@ export function GradeFormDialog({
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Grade */}
+        {/* Grade Name */}
         <div className="space-y-2">
-          <Label htmlFor="grade" className="font-bold text-black">
+          <Label htmlFor="grade_name" className="font-bold text-black">
             Grade
           </Label>
           <Input
-            id="grade"
-            value={formData.grade}
+            id="grade_name"
+            value={formData.grade_name}
             onChange={(e) =>
-              setFormData({ ...formData, grade: e.target.value })
+              setFormData({ ...formData, grade_name: e.target.value })
             }
             required
             className={outlineClass}
           />
         </div>
 
-        {/* Type */}
+        {/* Type (optional) */}
         <div className="space-y-2">
           <Label htmlFor="type" className="font-bold text-black">
-            Type
+            Type (optional)
           </Label>
           <Input
             id="type"
@@ -90,7 +95,7 @@ export function GradeFormDialog({
             onChange={(e) =>
               setFormData({ ...formData, type: e.target.value })
             }
-            required
+            placeholder="Leave blank if not needed"
             className={outlineClass}
           />
         </div>
