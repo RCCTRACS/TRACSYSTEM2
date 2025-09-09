@@ -8,15 +8,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
-import { User } from "./UserManagement";
+import { Section } from "./SectionManagement";
 import Papa from "papaparse";
 
-interface BulkUploadDialogProps {
-  onUpload: (newUsers: User[]) => void;
+interface BulkUploadSectionProps {
+  onUpload: (newSections: Section[]) => void;
   onClose: () => void;
 }
 
-export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
+export function BulkUploadSection({ onUpload, onClose }: BulkUploadSectionProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
 
@@ -30,30 +30,25 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
       const text = e.target?.result;
       if (typeof text !== "string") return;
 
-      Papa.parse<User>(text, {
+      Papa.parse<Section>(text, {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          const expectedHeaders = ["first_name", "last_name", "email", "department", "level", "role", "status"];
+          const expectedHeaders = ["Section", "Type"];
           const headers = results.meta.fields || [];
-          const isValid = expectedHeaders.every(h => headers.includes(h));
+          const isValid = expectedHeaders.every((h) => headers.includes(h));
           if (!isValid) {
             setError(`CSV headers must be: ${expectedHeaders.join(", ")}`);
             return;
           }
 
-          const newUsers: User[] = results.data.map((row) => ({
+          const newSections: Section[] = results.data.map((row) => ({
             id: Date.now().toString() + Math.random().toString(36).slice(2),
-            first_name: row.first_name || "",
-            last_name: row.last_name || "",
-            email: row.email || "",
-            department: row.department || "",
-            level: row.level || "",
-            role: row.role || "",
-            status: row.status || "active",
+            section: row.Section || "",
+            type: row.Type || "",
           }));
 
-          onUpload(newUsers);
+          onUpload(newSections);
           setFile(null);
           onClose();
         },

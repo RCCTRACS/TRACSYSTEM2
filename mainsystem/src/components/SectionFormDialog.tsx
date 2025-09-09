@@ -1,101 +1,80 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import type { Department } from "./DepartmentManagement";
+interface Section {
+  id: string;
+  section: string;
+  type: string;
+}
 
-interface DepartmentFormDialogProps {
-  department: Department | null;
-  onSave: (dep: Partial<Department>) => void;
+interface SectionFormDialogProps {
+  section: Section | null;
+  onSave: (section: Partial<Section>) => void;
   onClose: () => void;
 }
 
-export function DepartmentFormDialog({
-  department,
-  onSave,
-  onClose,
-}: DepartmentFormDialogProps) {
+export function SectionFormDialog({ section, onSave, onClose }: SectionFormDialogProps) {
   const [formData, setFormData] = useState({
-    department: "",
-    type: "Student", // default type is Student
+    section: "",
+    type: "",
   });
 
   useEffect(() => {
-    if (department) {
-      // editing mode
+    if (section) {
       setFormData({
-        department: department.department,
-        type: department.type,
+        section: section.section,
+        type: section.type,
       });
     } else {
-      // add mode
       setFormData({
-        department: "",
-        type: "Student",
+        section: "",
+        type: "",
       });
     }
-  }, [department]);
+  }, [section]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Preserve ID when editing
-    const payload = department
-      ? { id: department.id, ...formData }
-      : formData;
-
-    onSave(payload);
+    onSave(formData);
   };
 
   const outlineClass =
     "border-[3px] border-[#3E1F0F] rounded-lg focus:border-[#3E1F0F] focus:ring-1 focus:ring-[#3E1F0F] h-12 px-3";
 
   return (
-    <DialogContent className="sm:max-w-[600px] bg-popover p-6">
+    <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-[#fdfaf6] to-[#fff7f0] p-6 rounded-3xl shadow-2xl border border-[#D9B99B]">
       <DialogHeader className="px-0">
         <DialogTitle className="text-xl font-bold text-black">
-          {department ? "Edit Department" : "Add Department"}
+          {section ? "Edit Section" : "Add Section"}
         </DialogTitle>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Department Name */}
+        {/* Section Name */}
         <div className="space-y-2">
-          <Label htmlFor="department" className="font-bold text-black">
-            Department
-          </Label>
+          <Label htmlFor="section" className="font-bold text-black">Section</Label>
           <Input
-            id="department"
-            value={formData.department}
-            onChange={(e) =>
-              setFormData({ ...formData, department: e.target.value })
-            }
+            id="section"
+            value={formData.section}
+            onChange={(e) => setFormData({ ...formData, section: e.target.value })}
             required
             className={outlineClass}
           />
         </div>
 
-        {/* Type Dropdown */}
+        {/* Type as Textbox */}
         <div className="space-y-2">
-          <Label htmlFor="type" className="font-bold text-black">
-            Type
-          </Label>
-          <select
+          <Label htmlFor="type" className="font-bold text-black">Type</Label>
+          <Input
             id="type"
             value={formData.type}
-            onChange={(e) =>
-              setFormData({ ...formData, type: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
             required
-            className={`${outlineClass} bg-white`}
-          >
-            <option value="Student">Student</option>
-            <option value="Employee">Employee</option>
-          </select>
+            className={outlineClass}
+          />
         </div>
 
         {/* Buttons */}
@@ -113,7 +92,7 @@ export function DepartmentFormDialog({
             type="submit"
             className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200"
           >
-            {department ? "Update" : "Add"}
+            {section ? "Update" : "Add"}
           </Button>
         </div>
       </form>

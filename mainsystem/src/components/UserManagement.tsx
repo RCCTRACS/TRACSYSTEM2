@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -22,11 +24,13 @@ import { FilterUserDialog } from "./FilterUserDialog";
 
 export interface User {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   department: string;
   level?: string;
-  access: string;
+  role: "admin" | "teacher";
+  status: "active" | "inactive";
 }
 
 export function UserManagement() {
@@ -42,42 +46,79 @@ export function UserManagement() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
+  const API_URL = "http://192.168.1.13/capstone/mainsystem/backend/users_api.php"; // <-- make sure this matches your PHP path
+
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
-  // --- Search filter ---
+  // Fetch users
+  useEffect(() => {
+    fetch(API_URL)
+      .then((res) => res.json())
+      .then((data) => {
+        const list: User[] = data?.users ?? (Array.isArray(data) ? data : []);
+        setUsers(list);
+        setFilteredUsers(list);
+      })
+      .catch((err) => console.error("Error fetching users:", err));
+  }, []);
+
+  // Search
   const handleSearch = (term: string) => {
     setSearchTerm(term);
+    const t = term.toLowerCase();
     const searchFiltered = users.filter(
       (u) =>
-        u.name.toLowerCase().includes(term.toLowerCase()) ||
-        u.email.toLowerCase().includes(term.toLowerCase()) ||
-        u.department.toLowerCase().includes(term.toLowerCase()) ||
-        (u.level || "").toLowerCase().includes(term.toLowerCase())
+        `${u.first_name} ${u.last_name}`.toLowerCase().includes(t) ||
+        u.email.toLowerCase().includes(t) ||
+        (u.department ?? "").toLowerCase().includes(t) ||
+        (u.level ?? "").toLowerCase().includes(t) ||
+        u.role.toLowerCase().includes(t) ||
+        u.status.toLowerCase().includes(t)
     );
     setFilteredUsers(searchFiltered);
   };
 
-  // --- Add/Edit User ---
+  // Add/Edit
   const handleSaveUser = (userData: Partial<User>) => {
     if (selectedUser) {
-      const updatedUsers = users.map((u) =>
-        u.id === selectedUser.id ? { ...u, ...userData } : u
-      );
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers);
+      // Update
+      fetch(API_URL, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedUser.id, ...userData }),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.success) {
+            const updated = users.map((u) =>
+              u.id === selectedUser.id ? { ...u, ...res.user } : u
+            );
+            setUsers(updated);
+            setFilteredUsers(updated);
+          } else {
+            alert(res.message || "Failed to update user.");
+          }
+        })
+        .catch((err) => console.error("Error updating user:", err));
     } else {
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: userData.name || "",
-        email: userData.email || "",
-        department: userData.department || "",
-        level: userData.level,
-        access: userData.access || "",
-      };
-      const updatedUsers = [...users, newUser];
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers); // immediate display
+      // Create
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.success && res.user) {
+            const updated = [...users, res.user as User];
+            setUsers(updated);
+            setFilteredUsers(updated);
+          } else {
+            alert(res.message || "Failed to add user.");
+          }
+        })
+        .catch((err) => console.error("Error adding user:", err));
     }
 
     setIsAddUserOpen(false);
@@ -85,29 +126,41 @@ export function UserManagement() {
     setSelectedUser(null);
   };
 
+  // Edit
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setIsEditUserOpen(true);
   };
 
+  // Delete
   const handleDeleteUser = (user: User) => {
     setSelectedUser(user);
     setIsDeleteUserOpen(true);
   };
 
   const handleConfirmDelete = () => {
-    if (selectedUser) {
-      const remaining = users.filter((u) => u.id !== selectedUser.id);
-      setUsers(remaining);
-      setFilteredUsers(remaining);
-      setIsDeleteUserOpen(false);
-      setSelectedUser(null);
-    }
+    if (!selectedUser) return;
+
+    fetch(`${API_URL}?id=${selectedUser.id}`, { method: "DELETE" })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success) {
+          const remaining = users.filter((u) => u.id !== selectedUser.id);
+          setUsers(remaining);
+          setFilteredUsers(remaining);
+          setIsDeleteUserOpen(false);
+          setSelectedUser(null);
+        } else {
+          alert(res.message || "Failed to delete user.");
+        }
+      })
+      .catch((err) => console.error("Error deleting user:", err));
   };
 
-  // --- Download Template ---
+  // Download template
   const handleDownloadTemplate = () => {
-    const csvContent = "id,name,email,department,level,access\n";
+    const csvContent =
+      "id,first_name,last_name,email,department,level,role,status\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -220,7 +273,9 @@ export function UserManagement() {
                 if (department === "All") {
                   setFilteredUsers(users);
                 } else {
-                  const filtered = users.filter((u) => u.department === department);
+                  const filtered = users.filter(
+                    (u) => (u.department ?? "") === department
+                  );
                   setFilteredUsers(filtered);
                 }
               }}
@@ -235,11 +290,12 @@ export function UserManagement() {
         <CardHeader />
         <CardContent>
           {/* Header Row */}
-          <div className="grid grid-cols-5 gap-x-6 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
+          <div className="grid grid-cols-6 gap-x-6 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
             <div>Name</div>
             <div>Email</div>
             <div>Department / Level</div>
-            <div>Access</div>
+            <div>Role</div>
+            <div>Status</div>
             <div></div>
           </div>
 
@@ -253,16 +309,18 @@ export function UserManagement() {
               filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="grid grid-cols-5 gap-x-6 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
+                  className="grid grid-cols-6 gap-x-6 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
-                  <div className="font-medium">{user.name}</div>
+                  <div className="font-medium">
+                    {user.first_name} {user.last_name}
+                  </div>
                   <div>{user.email}</div>
                   <div>
-                    {user.department === "Teacher" && user.level
-                      ? user.level
-                      : user.department}
+                    {user.department}
+                    {user.level ? ` - ${user.level}` : ""}
                   </div>
-                  <div>{user.access}</div>
+                  <div>{user.role}</div>
+                  <div>{user.status}</div>
                   <div className="flex justify-center gap-2">
                     <Button
                       variant="ghost"
@@ -306,7 +364,11 @@ export function UserManagement() {
           setSelectedUser(null);
         }}
         onConfirm={handleConfirmDelete}
-        userName={selectedUser?.name || ""}
+        userName={
+          selectedUser
+            ? `${selectedUser.first_name} ${selectedUser.last_name}`
+            : ""
+        }
       />
     </div>
   );

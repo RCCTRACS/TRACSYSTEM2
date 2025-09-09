@@ -4,50 +4,55 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-import type { Department } from "./DepartmentManagement";
+interface Grade {
+  id: string;
+  grade_name: string;
+  type?: string;
+}
 
-interface DepartmentFormDialogProps {
-  department: Department | null;
-  onSave: (dep: Partial<Department>) => void;
+interface GradeFormDialogProps {
+  grade: Grade | null;
+  onSave: (grade: Partial<Grade>) => void;
   onClose: () => void;
 }
 
-export function DepartmentFormDialog({
-  department,
+export function GradeFormDialog({
+  grade,
   onSave,
   onClose,
-}: DepartmentFormDialogProps) {
+}: GradeFormDialogProps) {
   const [formData, setFormData] = useState({
-    department: "",
-    type: "Student", // default type is Student
+    grade_name: "",
+    type: "",
   });
 
   useEffect(() => {
-    if (department) {
-      // editing mode
+    if (grade) {
       setFormData({
-        department: department.department,
-        type: department.type,
+        grade_name: grade.grade_name,
+        type: grade.type || "",
       });
     } else {
-      // add mode
       setFormData({
-        department: "",
-        type: "Student",
+        grade_name: "",
+        type: "",
       });
     }
-  }, [department]);
+  }, [grade]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Preserve ID when editing
-    const payload = department
-      ? { id: department.id, ...formData }
-      : formData;
-
+    // remove type if empty so backend treats it as NULL
+    const payload = {
+      grade_name: formData.grade_name,
+      ...(formData.type ? { type: formData.type } : {}),
+    };
     onSave(payload);
   };
 
@@ -55,47 +60,44 @@ export function DepartmentFormDialog({
     "border-[3px] border-[#3E1F0F] rounded-lg focus:border-[#3E1F0F] focus:ring-1 focus:ring-[#3E1F0F] h-12 px-3";
 
   return (
-    <DialogContent className="sm:max-w-[600px] bg-popover p-6">
+    <DialogContent className="sm:max-w-[500px] bg-popover p-6">
       <DialogHeader className="px-0">
         <DialogTitle className="text-xl font-bold text-black">
-          {department ? "Edit Department" : "Add Department"}
+          {grade ? "Edit Grade" : "Add Grade"}
         </DialogTitle>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Department Name */}
+        {/* Grade Name */}
         <div className="space-y-2">
-          <Label htmlFor="department" className="font-bold text-black">
-            Department
+          <Label htmlFor="grade_name" className="font-bold text-black">
+            Grade
           </Label>
           <Input
-            id="department"
-            value={formData.department}
+            id="grade_name"
+            value={formData.grade_name}
             onChange={(e) =>
-              setFormData({ ...formData, department: e.target.value })
+              setFormData({ ...formData, grade_name: e.target.value })
             }
             required
             className={outlineClass}
           />
         </div>
 
-        {/* Type Dropdown */}
+        {/* Type (optional) */}
         <div className="space-y-2">
           <Label htmlFor="type" className="font-bold text-black">
-            Type
+            Type (optional)
           </Label>
-          <select
+          <Input
             id="type"
             value={formData.type}
             onChange={(e) =>
               setFormData({ ...formData, type: e.target.value })
             }
-            required
-            className={`${outlineClass} bg-white`}
-          >
-            <option value="Student">Student</option>
-            <option value="Employee">Employee</option>
-          </select>
+            placeholder="Leave blank if not needed"
+            className={outlineClass}
+          />
         </div>
 
         {/* Buttons */}
@@ -113,7 +115,7 @@ export function DepartmentFormDialog({
             type="submit"
             className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200"
           >
-            {department ? "Update" : "Add"}
+            {grade ? "Update" : "Add"}
           </Button>
         </div>
       </form>

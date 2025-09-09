@@ -78,17 +78,6 @@ const LoginPage: React.FC = () => {
 
           {errorMsg && <p className="error-msg">{errorMsg}</p>}
 
-          {/* ✅ Create account link restored
-          <p className="register-link">
-            Don’t have an account?{' '}
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => navigate('/register')}
-            >
-              Create one
-            </button>
-          </p> */}
         </div>
       </div>
     </div>

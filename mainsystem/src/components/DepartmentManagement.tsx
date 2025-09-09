@@ -1,27 +1,43 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Plus, Filter, Download, Upload, Edit, Trash2, Building2 } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Filter,
+  Download,
+  Upload,
+  Edit,
+  Trash2,
+  Building2,
+} from "lucide-react";
 
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
 import { DeleteDepartmentDialog } from "./DeleteDepartmentDialog";
-import { FilterDepartmentDialog } from "./FilterDepartmentDialog"; // updated import
+import { FilterDepartmentDialog } from "./FilterDepartmentDialog";
 import { ExportDialog } from "./ExportDepartmentDialog";
 import { BulkUploadDepartment } from "./BulkUploadDepartment";
+
+import { toast } from "sonner";
 
 export interface Department {
   id: string;
   department: string;
-  type: string;
+  type: string; // "Student" | "Employee"
 }
 
 export function DepartmentManagement() {
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
+  const [filteredDepartments, setFilteredDepartments] = useState<Department[]>(
+    []
+  );
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [selectedDepartment, setSelectedDepartment] =
+    useState<Department | null>(null);
 
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
   const [isEditDepartmentOpen, setIsEditDepartmentOpen] = useState(false);
@@ -30,8 +46,26 @@ export function DepartmentManagement() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
+  const API_URL =
+    "http://192.168.1.13/capstone/mainsystem/backend/department_api.php";
+
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
+
+  // ✅ Fetch from PHP API
+  const loadDepartments = () => {
+    fetch(API_URL)
+      .then((res) => res.json())
+      .then((data) => {
+        setDepartments(data);
+        setFilteredDepartments(data);
+      })
+      .catch(() => toast.error("Failed to load departments"));
+  };
+
+  useEffect(() => {
+    loadDepartments();
+  }, []);
 
   // --- Search filter ---
   const handleSearch = (term: string) => {
@@ -44,7 +78,7 @@ export function DepartmentManagement() {
     setFilteredDepartments(searchFiltered);
   };
 
-  // --- Filter by type (Employee / Student / All) ---
+  // --- Filter by type ---
   const handleFilter = (type: string) => {
     if (type === "All") {
       setFilteredDepartments(departments);
@@ -52,36 +86,64 @@ export function DepartmentManagement() {
       const filtered = departments.filter((dep) => dep.type === type);
       setFilteredDepartments(filtered);
     }
+    toast.info(
+      type === "All" ? "Showing all departments" : `Filtered by ${type}`
+    );
   };
 
   // --- Add/Edit Department ---
   const handleSaveDepartment = (depData: Partial<Department>) => {
     if (selectedDepartment) {
-      const updatedDepartments = departments.map((d) =>
-        d.id === selectedDepartment.id ? { ...d, ...depData } : d
-      );
-      setDepartments(updatedDepartments);
-      setFilteredDepartments(updatedDepartments);
+      // ✅ Update existing (PUT)
+      fetch(API_URL, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(depData),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.success) {
+            loadDepartments();
+            toast.success(
+              `Department "${result.data.department}" updated successfully`
+            );
+          } else {
+            toast.error(result.error || "Failed to update department");
+          }
+        })
+        .catch(() => toast.error("Failed to update department"));
     } else {
-      const newDepartment: Department = {
-        id: Date.now().toString(),
-        department: depData.department || "",
-        type: depData.type || "",
-      };
-      const updatedDepartments = [...departments, newDepartment];
-      setDepartments(updatedDepartments);
-      setFilteredDepartments(updatedDepartments);
+      // ✅ Add new (POST)
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(depData),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.success) {
+            loadDepartments();
+            toast.success(
+              `Department "${result.data.department}" added successfully`
+            );
+          } else {
+            toast.error(result.error || "Failed to add department");
+          }
+        })
+        .catch(() => toast.error("Failed to add department"));
     }
     setIsAddDepartmentOpen(false);
     setIsEditDepartmentOpen(false);
     setSelectedDepartment(null);
   };
 
+  // --- Edit handler ---
   const handleEditDepartment = (dep: Department) => {
     setSelectedDepartment(dep);
     setIsEditDepartmentOpen(true);
   };
 
+  // --- Delete handler ---
   const handleDeleteDepartment = (dep: Department) => {
     setSelectedDepartment(dep);
     setIsDeleteDepartmentOpen(true);
@@ -89,17 +151,31 @@ export function DepartmentManagement() {
 
   const handleConfirmDelete = () => {
     if (selectedDepartment) {
-      const remaining = departments.filter((d) => d.id !== selectedDepartment.id);
-      setDepartments(remaining);
-      setFilteredDepartments(remaining);
+      fetch(API_URL, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedDepartment.id }),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.success) {
+            loadDepartments();
+            toast.success(
+              `Department "${selectedDepartment.department}" deleted`
+            );
+          } else {
+            toast.error(result.error || "Failed to delete department");
+          }
+        })
+        .catch(() => toast.error("Failed to delete department"));
       setIsDeleteDepartmentOpen(false);
       setSelectedDepartment(null);
     }
   };
 
-  // --- Download Template ---
+  // --- Download Template (headers only) ---
   const handleDownloadTemplate = () => {
-    const csvContent = "id,department,type\n";
+    const csvContent = "department,type\n"; // ✅ headers only, no sample data
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -107,6 +183,7 @@ export function DepartmentManagement() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Template downloaded successfully");
   };
 
   return (
@@ -115,7 +192,9 @@ export function DepartmentManagement() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-normal text-black">RCC TRACS</p>
-          <h2 className="text-3xl font-bold text-black">Department Management</h2>
+          <h2 className="text-3xl font-bold text-black">
+            Department Management
+          </h2>
         </div>
         <Button
           className={`${outlineDarkBrownBtn} flex items-center gap-2 rounded-full px-4 py-2`}
@@ -172,12 +251,8 @@ export function DepartmentManagement() {
               </Button>
             </DialogTrigger>
             <BulkUploadDepartment
-              onUpload={(newDeps) => {
-                const updated = [...departments, ...newDeps];
-                setDepartments(updated);
-                setFilteredDepartments(updated);
-              }}
               onClose={() => setIsBulkUploadOpen(false)}
+              onSuccess={loadDepartments}
             />
           </Dialog>
 
@@ -191,7 +266,10 @@ export function DepartmentManagement() {
             </DialogTrigger>
             <ExportDialog
               departments={filteredDepartments}
-              onClose={() => setIsExportOpen(false)}
+              onClose={() => {
+                setIsExportOpen(false);
+                toast.success("Departments exported successfully");
+              }}
             />
           </Dialog>
 
