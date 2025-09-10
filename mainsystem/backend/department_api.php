@@ -16,6 +16,7 @@ if ($method === 'OPTIONS') {
     exit();
 }
 
+// Escape CSV values
 function csv_escape($val) {
     $val = (string)$val;
     if (strpos($val, '"') !== false) {
@@ -31,18 +32,15 @@ switch ($method) {
     case "GET":
         $search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : "";
         $filterType = isset($_GET['filterType']) ? $conn->real_escape_string($_GET['filterType']) : "";
-        $export = isset($_GET['export']) ? $_GET['export'] : "";
+        $export = $_GET['export'] ?? "";
 
         $sql = "SELECT id, department, type, created_at FROM departments WHERE 1";
 
         if ($search !== "") {
-            $safe = $conn->real_escape_string($search);
-            $sql .= " AND (department LIKE '%$safe%' OR type LIKE '%$safe%')";
+            $sql .= " AND (department LIKE '%$search%' OR type LIKE '%$search%')";
         }
-
         if ($filterType !== "" && $filterType !== "All") {
-            $ft = $conn->real_escape_string($filterType);
-            $sql .= " AND type = '$ft'";
+            $sql .= " AND type = '$filterType'";
         }
 
         $sql .= " ORDER BY department ASC";
@@ -61,14 +59,9 @@ switch ($method) {
             $timestamp = date("Y-m-d_H-i-s");
             header("Content-Disposition: attachment; filename=\"departments_template_{$timestamp}.csv\"");
 
-            // Only export department + type
             echo "department,type (Student|Employee)\n";
             foreach ($rows as $r) {
-                $line = [
-                    csv_escape($r['department']),
-                    csv_escape($r['type'])
-                ];
-                echo implode(",", $line) . "\n";
+                echo csv_escape($r['department']) . "," . csv_escape($r['type']) . "\n";
             }
             exit();
         }
@@ -77,60 +70,110 @@ switch ($method) {
         break;
 
     case "POST":
-        $raw = file_get_contents("php://input");
-        $data = json_decode($raw, true);
+        // Handle CSV bulk upload
+        if (!empty($_FILES['file']) && is_uploaded_file($_FILES['file']['tmp_name'])) {
+            $fileTmp = $_FILES['file']['tmp_name'];
+            $handle = fopen($fileTmp, "r");
+            if ($handle === false) {
+                http_response_code(400);
+                echo json_encode(["error" => "Unable to read uploaded file"]);
+                exit();
+            }
 
-        if ($data === null) {
-            http_response_code(400);
-            echo json_encode(["error" => "Invalid JSON"]);
-            exit();
-        }
+            $header = fgetcsv($handle); // skip header row
+            $inserted = 0;
+            $updated = 0;
+            $skipped = 0;
 
-        $departmentName = trim($data['department'] ?? $data['Department'] ?? '');
-        $type = trim(
-            $data['type'] ??
-            $data['Type'] ??
-            $data['type (Student|Employee)'] ??
-            ''
-        );
+            while (($row = fgetcsv($handle)) !== false) {
+                $departmentName = trim($row[0] ?? "");
+                $type = trim($row[1] ?? "Student");
 
-        if ($departmentName === '') {
-            http_response_code(400);
-            echo json_encode(["error" => "Missing department"]);
-            exit();
-        }
-        if ($type === '') $type = 'Student';
+                if ($departmentName === "") {
+                    $skipped++;
+                    continue;
+                }
 
-        // Check duplicates
-        $stmt = $conn->prepare("SELECT id FROM departments WHERE department = ?");
-        $stmt->bind_param("s", $departmentName);
-        $stmt->execute();
-        $stmt->store_result();
-        if ($stmt->num_rows > 0) {
-            http_response_code(409);
-            echo json_encode(["error" => "Department already exists"]);
-            exit();
-        }
+                // Check if exists
+                $stmt = $conn->prepare("SELECT id FROM departments WHERE department = ?");
+                $stmt->bind_param("s", $departmentName);
+                $stmt->execute();
+                $res = $stmt->get_result();
 
-        // Insert new department
-        $stmtIns = $conn->prepare("INSERT INTO departments (department, type) VALUES (?, ?)");
-        $stmtIns->bind_param("ss", $departmentName, $type);
-        if ($stmtIns->execute()) {
-            $newId = $conn->insert_id;
-            $res = $conn->query("SELECT id, department, type, created_at FROM departments WHERE id = $newId");
-            $row = $res->fetch_assoc();
+                if ($res && $res->num_rows > 0) {
+                    // Update if exists
+                    $existing = $res->fetch_assoc();
+                    $id = $existing['id'];
+                    $stmtUpd = $conn->prepare("UPDATE departments SET type = ? WHERE id = ?");
+                    $stmtUpd->bind_param("si", $type, $id);
+                    if ($stmtUpd->execute()) $updated++;
+                } else {
+                    // Insert new
+                    $stmtIns = $conn->prepare("INSERT INTO departments (department, type) VALUES (?, ?)");
+                    $stmtIns->bind_param("ss", $departmentName, $type);
+                    if ($stmtIns->execute()) $inserted++;
+                }
+            }
+            fclose($handle);
 
             echo json_encode([
                 "success" => true,
-                "id" => $row['id'],
-                "department" => $row['department'],
-                "type" => $row['type'],
-                "created_at" => $row['created_at']
+                "message" => "Bulk upload complete",
+                "inserted" => $inserted,
+                "updated" => $updated,
+                "skipped" => $skipped
             ]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => $conn->error]);
+            exit();
         }
+
+        // Handle single JSON insert (normal)
+        $raw = file_get_contents("php://input");
+        $data = json_decode($raw, true);
+
+        if ($data !== null) {
+            $departmentName = trim($data['department'] ?? $data['Department'] ?? '');
+            $type = trim($data['type'] ?? $data['Type'] ?? $data['type (Student|Employee)'] ?? '');
+
+            if ($departmentName === '') {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing department"]);
+                exit();
+            }
+            if ($type === '') $type = 'Student';
+
+            // Duplicate check
+            $stmt = $conn->prepare("SELECT id FROM departments WHERE department = ?");
+            $stmt->bind_param("s", $departmentName);
+            $stmt->execute();
+            $stmt->store_result();
+            if ($stmt->num_rows > 0) {
+                http_response_code(409);
+                echo json_encode(["error" => "Department already exists"]);
+                exit();
+            }
+
+            // Insert
+            $stmtIns = $conn->prepare("INSERT INTO departments (department, type) VALUES (?, ?)");
+            $stmtIns->bind_param("ss", $departmentName, $type);
+            if ($stmtIns->execute()) {
+                $newId = $conn->insert_id;
+                $res = $conn->query("SELECT id, department, type, created_at FROM departments WHERE id = $newId");
+                $row = $res->fetch_assoc();
+
+                echo json_encode([
+                    "success" => true,
+                    "data" => $row
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => $conn->error]);
+            }
+            exit();
+        }
+
+        // If neither file nor JSON was provided
+        http_response_code(400);
+        echo json_encode(["error" => "No data provided"]);
         break;
 
     case "PUT":
@@ -145,12 +188,7 @@ switch ($method) {
 
         $id = intval($data['id'] ?? 0);
         $departmentName = trim($data['department'] ?? '');
-        $type = trim(
-            $data['type'] ??
-            $data['Type'] ??
-            $data['type (Student|Employee)'] ??
-            ''
-        );
+        $type = trim($data['type'] ?? $data['Type'] ?? $data['type (Student|Employee)'] ?? '');
 
         if ($id <= 0 || $departmentName === '') {
             http_response_code(400);
@@ -159,7 +197,7 @@ switch ($method) {
         }
         if ($type === '') $type = 'Student';
 
-        // Check duplicates
+        // Duplicate check
         $stmtDup = $conn->prepare("SELECT id FROM departments WHERE department = ? AND id <> ?");
         $stmtDup->bind_param("si", $departmentName, $id);
         $stmtDup->execute();
@@ -170,10 +208,17 @@ switch ($method) {
             exit();
         }
 
+        // Update
         $stmt = $conn->prepare("UPDATE departments SET department = ?, type = ? WHERE id = ?");
         $stmt->bind_param("ssi", $departmentName, $type, $id);
         if ($stmt->execute()) {
-            echo json_encode(["success" => true]);
+            $res = $conn->query("SELECT id, department, type, created_at FROM departments WHERE id = $id");
+            $row = $res->fetch_assoc();
+
+            echo json_encode([
+                "success" => true,
+                "data" => $row
+            ]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => $conn->error]);
@@ -194,7 +239,7 @@ switch ($method) {
         $stmt = $conn->prepare("DELETE FROM departments WHERE id = ?");
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
-            echo json_encode(["success" => true]);
+            echo json_encode(["success" => true, "id" => $id]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => $conn->error]);

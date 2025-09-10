@@ -1,7 +1,7 @@
 // 1️⃣ Add this function inside your UserManagement component
 const handleDownloadTemplate = () => {
   // CSV headers for the template
-  const csvContent = "id,name,email,department,level,access\n"; 
+  const csvContent = "id,name,email,department,level,access\n";
   // Optional: add example row
   // csvContent += "1,John Doe,john@example.com,Teacher,College,Admin\n";
 

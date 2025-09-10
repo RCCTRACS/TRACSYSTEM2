@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import type { User } from "./UserManagement";
 
@@ -13,9 +13,27 @@ interface ExportDialogProps {
 
 export function ExportDialog({ users, onClose }: ExportDialogProps) {
   const handleExport = () => {
-    const headers = ["Name", "Email", "Department", "Level", "Access"];
-    const rows = users.map(u => [u.name, u.email, u.department, u.level || "", u.access]);
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const headers = [
+      "First Name",
+      "Last Name",
+      "Email",
+      "Password",
+      "Department",
+      "Role",
+      "Status"
+    ];
+
+    const rows = users.map((u) => [
+      u.first_name,
+      u.last_name,
+      u.email,
+      u.password,
+      u.department,
+      u.role,
+      u.status
+    ]);
+
+    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);

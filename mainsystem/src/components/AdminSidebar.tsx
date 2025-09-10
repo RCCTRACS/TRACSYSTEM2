@@ -23,9 +23,9 @@ const sidebarVariants = {
       duration: 0.6,
       when: "beforeChildren",
       staggerChildren: 0.15,
-      delayChildren: 0.05, // ⏳ wait for logo animation before icons cascade
-    },
-  },
+      delayChildren: 0.05 // ⏳ wait for logo animation before icons cascade
+    }
+  }
 };
 
 // Menu item animation
@@ -34,8 +34,8 @@ const itemVariants = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
-  },
+    transition: { duration: 0.5, ease: "easeOut" }
+  }
 };
 
 const AdminSidebar: React.FC = () => {
@@ -43,12 +43,20 @@ const AdminSidebar: React.FC = () => {
     { src: "/Dashboard.png", label: "Dashboard", url: "/dashboard" },
     { src: "/user.png", label: "User Management", url: "/usermanagement" },
     { src: "/subject.png", label: "Subject Management", url: "/subjects" },
-    { src: "/department.png", label: "Department Management", url: "/departments" },
-    { src: "/attendance.png", label: "Attendance Management", url: "/attendances" },
+    {
+      src: "/department.png",
+      label: "Department Management",
+      url: "/departments"
+    },
+    {
+      src: "/attendance.png",
+      label: "Attendance Management",
+      url: "/attendances"
+    },
     { src: "/student.png", label: "Student Management", url: "/students" },
     { src: "/grade.png", label: "Grade Management", url: "/grades" },
     { src: "/section.png", label: "Section Management", url: "/sections" },
-    { src: "/strand.png", label: "Strand Management", url: "/strands" },
+    { src: "/strand.png", label: "Strand Management", url: "/strands" }
   ];
 
   const location = useLocation();
@@ -92,7 +100,7 @@ const AdminSidebar: React.FC = () => {
                 x: "-50%",
                 y: "-50%",
                 scale: 1.2,
-                opacity: 1,
+                opacity: 1
               }}
               animate={{
                 position: "relative",
@@ -101,11 +109,11 @@ const AdminSidebar: React.FC = () => {
                 x: 0,
                 y: 0,
                 scale: 1,
-                opacity: 1,
+                opacity: 1
               }}
               transition={{
                 duration: 1,
-                ease: "easeInOut",
+                ease: "easeInOut"
               }}
               className="mb-8"
             >

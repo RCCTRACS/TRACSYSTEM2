@@ -3,7 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Plus, Filter, Download, Upload, Edit, Trash2, User as UserIcon } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Filter,
+  Download,
+  Upload,
+  Edit,
+  Trash2,
+  User as UserIcon
+} from "lucide-react";
 
 import { SubjectFormDialog } from "./SubjectFormDialog";
 import { DeleteSubjectDialog } from "./DeleteSubjectDialog";
@@ -12,12 +21,21 @@ import { ExportSubjectDialog } from "./ExportSubjectDialog";
 import { BulkUploadSubject } from "./BulkUploadSubject";
 
 export interface Subject {
-  id: string;
+  id: number;
+  code: string;
   name: string;
-  yearLevel: string;
-  instructor: string;
+  grade: string; // from joined grades table
+  department: string; // from joined departments table
+  instructor: string; // full name
+  instructor_email: string;
   time?: string;
+  // hidden but useful for edits
+  grade_id?: number;
+  department_id?: number;
+  teacher_id?: number;
 }
+
+const API_URL = "http://localhost/your-backend/subject_api.php"; // adjust path
 
 export function SubjectManagement() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -32,44 +50,78 @@ export function SubjectManagement() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
 
-  const outlineBtn = "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
+  const outlineBtn =
+    "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
   const outlineBox = "border-2 border-[#5C4033] rounded-lg shadow-sm bg-white";
+
+  // Fetch subjects
+  useEffect(() => {
+    fetchSubjects();
+  }, []);
 
   useEffect(() => {
     setFilteredSubjects(subjects);
   }, [subjects]);
+
+  const fetchSubjects = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      if (data.success) {
+        setSubjects(data.subjects);
+      }
+    } catch (err) {
+      console.error("Failed to fetch subjects:", err);
+    }
+  };
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     const filtered = subjects.filter(
       (s) =>
         s.name.toLowerCase().includes(term.toLowerCase()) ||
-        s.id.toLowerCase().includes(term.toLowerCase()) ||
-        s.yearLevel.toLowerCase().includes(term.toLowerCase()) ||
+        s.code.toLowerCase().includes(term.toLowerCase()) ||
+        s.grade.toLowerCase().includes(term.toLowerCase()) ||
         s.instructor.toLowerCase().includes(term.toLowerCase())
     );
     setFilteredSubjects(filtered);
   };
 
-  const handleSave = (data: any) => {
-    const yearLevel = data.gradeOrYear || data.yearLevel || "";
-    const time = data.time || "";
-    if (selectedSubject) {
-      const updated = subjects.map((s) =>
-        s.id === selectedSubject.id
-          ? { ...s, id: data.id || s.id, name: data.name, instructor: data.instructor, yearLevel, time }
-          : s
-      );
-      setSubjects(updated);
-    } else {
-      const newSub: Subject = {
-        id: data.id || Date.now().toString(),
-        name: data.name || "",
-        yearLevel,
-        instructor: data.instructor || "",
-        time,
-      };
-      setSubjects([...subjects, newSub]);
+  const handleSave = async (data: any) => {
+    try {
+      if (selectedSubject) {
+        // Update
+        await fetch(API_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: selectedSubject.id,
+            code: data.code,
+            name: data.name,
+            department_id: data.department_id,
+            grade_id: data.grade_id,
+            teacher_id: data.teacher_id,
+            time: data.time || ""
+          })
+        });
+      } else {
+        // Create
+        await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: data.code,
+            name: data.name,
+            department_id: data.department_id,
+            grade_id: data.grade_id,
+            teacher_id: data.teacher_id,
+            time: data.time || ""
+          })
+        });
+      }
+      fetchSubjects();
+    } catch (err) {
+      console.error("Save failed:", err);
     }
     closeDialogs();
   };
@@ -84,9 +136,18 @@ export function SubjectManagement() {
     setIsDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedSubject) {
-      setSubjects(subjects.filter((s) => s.id !== selectedSubject.id));
+      try {
+        await fetch(API_URL, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: selectedSubject.id })
+        });
+        fetchSubjects();
+      } catch (err) {
+        console.error("Delete failed:", err);
+      }
       closeDialogs();
     }
   };
@@ -95,12 +156,15 @@ export function SubjectManagement() {
     setIsAddOpen(false);
     setIsEditOpen(false);
     setIsDeleteOpen(false);
+    setIsFilterOpen(false);
+    setIsExportOpen(false);
+    setIsBulkOpen(false);
     setSelectedSubject(null);
   };
 
   const handleDownloadTemplate = () => {
-    let csvContent = "Subject ID,Subject Name,Year Level,Instructor\n";
-    csvContent += "CS101,Intro to Computer Science,Grade 11,John Doe\n";
+    let csvContent = "Code,Name,Department ID,Grade ID,Teacher ID,Time\n";
+    csvContent += "CS101,Intro to Computer Science,1,2,5,08:00-10:00\n";
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -119,7 +183,9 @@ export function SubjectManagement() {
           <p className="text-sm text-black">RCC TRACS</p>
           <h2 className="text-3xl font-bold text-black">Subject Management</h2>
         </div>
-        <Button className={`${outlineBtn} flex items-center gap-2 rounded-full px-4 py-2`}>
+        <Button
+          className={`${outlineBtn} flex items-center gap-2 rounded-full px-4 py-2`}
+        >
           <UserIcon className="h-6 w-6 text-black" />
           Admin
         </Button>
@@ -141,11 +207,18 @@ export function SubjectManagement() {
           {/* Add */}
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
-              <Button className={outlineBtn} onClick={() => setSelectedSubject(null)}>
+              <Button
+                className={outlineBtn}
+                onClick={() => setSelectedSubject(null)}
+              >
                 <Plus className="h-4 w-4 mr-2" /> Add
               </Button>
             </DialogTrigger>
-            <SubjectFormDialog subject={null} onSave={handleSave} onClose={() => setIsAddOpen(false)} />
+            <SubjectFormDialog
+              subject={null}
+              onSave={handleSave}
+              onClose={() => setIsAddOpen(false)}
+            />
           </Dialog>
 
           {/* Download Template */}
@@ -161,7 +234,16 @@ export function SubjectManagement() {
               </Button>
             </DialogTrigger>
             <BulkUploadSubject
-              onUpload={(newSubs) => setSubjects([...subjects, ...newSubs])}
+              onUpload={async (newSubs) => {
+                for (const s of newSubs) {
+                  await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(s)
+                  });
+                }
+                fetchSubjects();
+              }}
               onClose={() => setIsBulkOpen(false)}
             />
           </Dialog>
@@ -190,8 +272,9 @@ export function SubjectManagement() {
               subjects={subjects.map((s) => s.name)}
               onFilter={(year, subject) => {
                 let filtered = subjects;
-                if (year) filtered = filtered.filter((s) => s.yearLevel === year);
-                if (subject) filtered = filtered.filter((s) => s.name === subject);
+                if (year) filtered = filtered.filter((s) => s.grade === year);
+                if (subject)
+                  filtered = filtered.filter((s) => s.name === subject);
                 setFilteredSubjects(filtered);
               }}
               onClose={() => setIsFilterOpen(false)}
@@ -204,32 +287,44 @@ export function SubjectManagement() {
       <Card className={outlineBox}>
         <CardHeader />
         <CardContent>
-          <div className="grid grid-cols-5 gap-x-6 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
-            <div>Subject ID</div>
-            <div>Subject Name</div>
-            <div>Year Level</div>
+          <div className="grid grid-cols-6 gap-x-6 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
+            <div>Code</div>
+            <div>Name</div>
+            <div>Grade</div>
+            <div>Department</div>
             <div>Instructor</div>
             <div></div>
           </div>
 
           <div className="mt-2 space-y-3">
             {filteredSubjects.length === 0 ? (
-              <div className="text-center text-gray-500 py-6">No subjects found</div>
+              <div className="text-center text-gray-500 py-6">
+                No subjects found
+              </div>
             ) : (
               filteredSubjects.map((s) => (
                 <div
                   key={s.id}
-                  className="grid grid-cols-5 gap-x-6 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
+                  className="grid grid-cols-6 gap-x-6 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
-                  <div className="font-medium">{s.id}</div>
+                  <div className="font-medium">{s.code}</div>
                   <div>{s.name}</div>
-                  <div>{s.yearLevel}</div>
+                  <div>{s.grade}</div>
+                  <div>{s.department}</div>
                   <div>{s.instructor}</div>
                   <div className="flex justify-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(s)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(s)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(s)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(s)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -242,7 +337,11 @@ export function SubjectManagement() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <SubjectFormDialog subject={selectedSubject} onSave={handleSave} onClose={closeDialogs} />
+        <SubjectFormDialog
+          subject={selectedSubject}
+          onSave={handleSave}
+          onClose={closeDialogs}
+        />
       </Dialog>
 
       {/* Delete Dialog */}

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,9 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
 
+  const API_URL =
+    "http://192.168.0.137/capstone/mainsystem/backend/users_api.php";
+
   const handleUpload = () => {
     if (!file) return;
 
@@ -33,10 +36,19 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
       Papa.parse<User>(text, {
         header: true,
         skipEmptyLines: true,
-        complete: (results) => {
-          const expectedHeaders = ["name", "email", "department", "level", "access"];
+        complete: async (results) => {
+          const expectedHeaders = [
+            "first_name",
+            "last_name",
+            "email",
+            "password",
+            "department",
+            "role",
+            "status"
+          ];
+
           const headers = results.meta.fields || [];
-          const isValid = expectedHeaders.every(h => headers.includes(h));
+          const isValid = expectedHeaders.every((h) => headers.includes(h));
           if (!isValid) {
             setError(`CSV headers must be: ${expectedHeaders.join(", ")}`);
             return;
@@ -44,20 +56,40 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
 
           const newUsers: User[] = results.data.map((row) => ({
             id: Date.now().toString() + Math.random().toString(36).slice(2),
-            name: row.name || "",
+            first_name: row.first_name || "",
+            last_name: row.last_name || "",
             email: row.email || "",
+            password: row.password || "",
             department: row.department || "",
-            level: row.level || "",
-            access: row.access || "",
+            role: (row.role as "Admin" | "Teacher") || "Teacher",
+            status: (row.status as "Active" | "Inactive") || "Inactive"
           }));
 
-          onUpload(newUsers);
-          setFile(null);
-          onClose();
+          try {
+            const res = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(newUsers) // 👈 send as array
+            });
+
+            const data = await res.json();
+            console.log("Bulk upload response:", data);
+
+            if (data.success) {
+              // use backend's saved users if returned
+              onUpload(data.users || newUsers);
+              setFile(null);
+              onClose();
+            } else {
+              setError(data.message || "Failed to upload users.");
+            }
+          } catch (err) {
+            setError("Network error: " + (err as Error).message);
+          }
         },
         error: (err) => {
           setError("Error parsing file: " + err.message);
-        },
+        }
       });
     };
 
@@ -67,7 +99,9 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
   return (
     <DialogContent className="sm:max-w-[500px] bg-popover p-6 rounded-xl shadow-md">
       <DialogHeader className="pb-4 border-b border-[#5C3A21]/30">
-        <DialogTitle className="text-xl font-bold text-black">Select a CSV file</DialogTitle>
+        <DialogTitle className="text-xl font-bold text-black">
+          Select a CSV file
+        </DialogTitle>
       </DialogHeader>
 
       <div className="space-y-6 mt-4">
@@ -83,7 +117,9 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
           <p className="text-xs text-muted-foreground">
             {file ? file.name : "No file chosen"}
           </p>
-          {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
+          {error && (
+            <p className="text-xs text-red-500 font-semibold">{error}</p>
+          )}
         </div>
 
         {/* Footer Buttons */}
@@ -91,7 +127,11 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
           <Button
             variant="outline"
             className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200 rounded-lg"
-            onClick={() => { setFile(null); setError(""); onClose(); }}
+            onClick={() => {
+              setFile(null);
+              setError("");
+              onClose();
+            }}
           >
             Cancel
           </Button>

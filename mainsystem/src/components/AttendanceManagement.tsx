@@ -9,7 +9,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { Pencil, Download, Filter, Edit, Trash2, User } from "lucide-react";
@@ -17,18 +17,19 @@ import { ManualAttendanceDialog } from "./ManualInput";
 import { FilterAttendanceDialog } from "./FilterAttendanceDialog";
 
 export interface Attendance {
-  id: string;          // Barcode ID
+  id: string; // Barcode ID
   studentName: string; // Name
-  yearLevel: string;   // Year Level
-  department: string;  // Department
-  timeIn: string;      // Time In
-  timeOut: string;     // Time Out
-  status: string;      // Present, Absent, Late
+  yearLevel: string; // Year Level
+  department: string; // Department
+  timeIn: string; // Time In
+  timeOut: string; // Time Out
+  status: string; // Present, Absent, Late
 }
 
 export function AttendanceManagement() {
   const [attendances, setAttendances] = useState<Attendance[]>([]);
-  const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
+  const [selectedAttendance, setSelectedAttendance] =
+    useState<Attendance | null>(null);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -43,7 +44,7 @@ export function AttendanceManagement() {
     department: "",
     timeIn: "",
     timeOut: "",
-    status: "",
+    status: ""
   });
 
   const outlineDarkBrownBtn =
@@ -51,14 +52,17 @@ export function AttendanceManagement() {
 
   // Export CSV
   const handleExport = () => {
-    const csvHeader = "Barcode ID,Name,Year Level,Department,Time In,Time Out,Status\n";
+    const csvHeader =
+      "Barcode ID,Name,Year Level,Department,Time In,Time Out,Status\n";
     const csvRows = attendances
       .map(
         (a) =>
           `${a.id},${a.studentName},${a.yearLevel},${a.department},${a.timeIn},${a.timeOut},${a.status}`
       )
       .join("\n");
-    const blob = new Blob([csvHeader + csvRows], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvHeader + csvRows], {
+      type: "text/csv;charset=utf-8;"
+    });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.setAttribute("download", "attendance_records.csv");
@@ -76,7 +80,7 @@ export function AttendanceManagement() {
       department: "N/A",
       timeIn,
       timeOut: "-",
-      status: "Present",
+      status: "Present"
     };
 
     setAttendances((prev) => [...prev, newAttendance]);
@@ -90,9 +94,14 @@ export function AttendanceManagement() {
   // Apply filters to attendances
   const filteredAttendances = attendances.filter((a) => {
     return (
-      (filters.name === "" || a.studentName.toLowerCase().includes(filters.name.toLowerCase())) &&
-      (filters.yearLevel === "" || a.yearLevel.toLowerCase().includes(filters.yearLevel.toLowerCase())) &&
-      (filters.department === "" || a.department.toLowerCase().includes(filters.department.toLowerCase())) &&
+      (filters.name === "" ||
+        a.studentName.toLowerCase().includes(filters.name.toLowerCase())) &&
+      (filters.yearLevel === "" ||
+        a.yearLevel.toLowerCase().includes(filters.yearLevel.toLowerCase())) &&
+      (filters.department === "" ||
+        a.department
+          .toLowerCase()
+          .includes(filters.department.toLowerCase())) &&
       (filters.timeIn === "" || a.timeIn >= filters.timeIn) &&
       (filters.timeOut === "" || a.timeOut <= filters.timeOut) &&
       (filters.status === "" || a.status === filters.status)
@@ -105,7 +114,9 @@ export function AttendanceManagement() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-normal text-black">RCC TRACS</p>
-          <h2 className="text-3xl font-bold text-black">Attendance Management</h2>
+          <h2 className="text-3xl font-bold text-black">
+            Attendance Management
+          </h2>
         </div>
         <Button
           className={`${outlineDarkBrownBtn} flex items-center gap-2 rounded-full px-4 py-2`}
@@ -178,7 +189,10 @@ export function AttendanceManagement() {
             <TableBody>
               {filteredAttendances.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-gray-500 py-6">
+                  <TableCell
+                    colSpan={8}
+                    className="text-center text-gray-500 py-6"
+                  >
                     No attendance records
                   </TableCell>
                 </TableRow>

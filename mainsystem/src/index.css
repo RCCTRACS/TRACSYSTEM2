@@ -39,12 +39,12 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     /* Admin Panel Specific Colors - Rich Brown Theme */
-    --admin-sidebar: 30 45% 20%;
-    --admin-sidebar-active: 30 65% 45%;
-    --admin-content: 0 0% 98%;
-    --admin-table-header: 30 20% 88%;
-    --admin-table-row: 0 0% 100%;
-    --admin-table-row-hover: 30 15% 94%;
+    --Admin-sidebar: 30 45% 20%;
+    --Admin-sidebar-Active: 30 65% 45%;
+    --Admin-content: 0 0% 98%;
+    --Admin-table-header: 30 20% 88%;
+    --Admin-table-row: 0 0% 100%;
+    --Admin-table-row-hover: 30 15% 94%;
 
     --sidebar-background: 30 45% 20%;
     --sidebar-foreground: 0 0% 100%;

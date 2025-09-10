@@ -13,7 +13,7 @@ import {
   Upload,
   Edit,
   Trash2,
-  FileText,
+  FileText
 } from "lucide-react";
 
 import { StrandFormDialog } from "./StrandFormDialog";
@@ -31,7 +31,8 @@ export interface Strand {
   type: string; // always "Academic"
 }
 
-const API_URL = "http://192.168.0.122/capstone/mainsystem/backend/strand_api.php";
+const API_URL =
+  "http://192.168.0.137/capstone/mainsystem/backend/strand_api.php";
 
 export function StrandManagement() {
   const [strands, setStrands] = useState<Strand[]>([]);
@@ -63,7 +64,7 @@ export function StrandManagement() {
       toast({
         title: "Error",
         description: "Failed to load strands.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -84,7 +85,7 @@ export function StrandManagement() {
       toast({
         title: "Error",
         description: "Search failed. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -100,16 +101,19 @@ export function StrandManagement() {
           body: JSON.stringify({
             id: selectedStrand.id,
             strand: strandData.strand,
-            type: "Academic",
-          }),
+            type: "Academic"
+          })
         });
-        toast({ title: "Updated", description: "Strand updated successfully!" });
+        toast({
+          title: "Updated",
+          description: "Strand updated successfully!"
+        });
       } else {
         // Add
         await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...strandData, type: "Academic" }),
+          body: JSON.stringify({ ...strandData, type: "Academic" })
         });
         toast({ title: "Added", description: "Strand added successfully!" });
       }
@@ -123,7 +127,7 @@ export function StrandManagement() {
       toast({
         title: "Error",
         description: "Failed to save strand.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -146,7 +150,7 @@ export function StrandManagement() {
       await fetch(API_URL, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: selectedStrand.id }),
+        body: JSON.stringify({ id: selectedStrand.id })
       });
       await loadStrands();
       setIsDeleteOpen(false);
@@ -157,7 +161,7 @@ export function StrandManagement() {
       toast({
         title: "Error",
         description: "Failed to delete strand.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -173,7 +177,10 @@ export function StrandManagement() {
     link.click();
     document.body.removeChild(link);
 
-    toast({ title: "Downloaded", description: "Template downloaded successfully." });
+    toast({
+      title: "Downloaded",
+      description: "Template downloaded successfully."
+    });
   };
 
   return (
@@ -244,14 +251,14 @@ export function StrandManagement() {
               onUpload={async (newStrands) => {
                 const cleaned = newStrands.map((s) => ({
                   ...s,
-                  type: "Academic",
+                  type: "Academic"
                 }));
 
                 try {
                   const res = await fetch(`${API_URL}?bulk=1`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(cleaned),
+                    body: JSON.stringify(cleaned)
                   });
 
                   const result = await res.json();
@@ -259,14 +266,15 @@ export function StrandManagement() {
                   if (result.success) {
                     toast({
                       title: "Bulk Upload Complete",
-                      description: `Uploaded ${result.inserted} strands (${result.skipped} skipped)`,
+                      description: `Uploaded ${result.inserted} strands (${result.skipped} skipped)`
                     });
                     await loadStrands();
                   } else {
                     toast({
                       title: "Bulk Upload Failed",
-                      description: result.error || "Some records could not be uploaded.",
-                      variant: "destructive",
+                      description:
+                        result.error || "Some records could not be uploaded.",
+                      variant: "destructive"
                     });
                   }
                 } catch (err) {
@@ -274,7 +282,7 @@ export function StrandManagement() {
                   toast({
                     title: "Error",
                     description: "Network error while uploading.",
-                    variant: "destructive",
+                    variant: "destructive"
                   });
                 }
               }}

@@ -3,7 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
 
 interface Student {
@@ -34,7 +34,7 @@ interface StudentFormDialogProps {
 export function StudentFormDialog({
   student,
   onSave,
-  onClose,
+  onClose
 }: StudentFormDialogProps) {
   const [formState, setFormState] = useState<Student>({
     id: "",
@@ -42,7 +42,7 @@ export function StudentFormDialog({
     name: "",
     yearLevel: "",
     department: "",
-    parentEmail: "",
+    parentEmail: ""
   });
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export function StudentFormDialog({
         name: "",
         yearLevel: "",
         department: "",
-        parentEmail: "",
+        parentEmail: ""
       });
     }
   }, [student]);
@@ -119,7 +119,9 @@ export function StudentFormDialog({
           </Label>
           <Select
             value={formState.yearLevel}
-            onValueChange={(value) => setFormState({ ...formState, yearLevel: value })}
+            onValueChange={(value) =>
+              setFormState({ ...formState, yearLevel: value })
+            }
           >
             <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select year level" />
@@ -140,7 +142,9 @@ export function StudentFormDialog({
           </Label>
           <Select
             value={formState.department}
-            onValueChange={(value) => setFormState({ ...formState, department: value })}
+            onValueChange={(value) =>
+              setFormState({ ...formState, department: value })
+            }
           >
             <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select department" />

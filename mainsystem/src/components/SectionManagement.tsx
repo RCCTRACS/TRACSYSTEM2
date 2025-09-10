@@ -13,7 +13,7 @@ import {
   Upload,
   Edit,
   Trash2,
-  FileText,
+  FileText
 } from "lucide-react";
 
 import { SectionFormDialog } from "./SectionFormDialog";
@@ -30,7 +30,7 @@ export interface Section {
 }
 
 const API_URL =
-  "http://192.168.0.122/capstone/mainsystem/backend/section_api.php";
+  "http://192.168.0.137/capstone/mainsystem/backend/section_api.php";
 
 export function SectionManagement() {
   const [sections, setSections] = useState<Section[]>([]);
@@ -90,7 +90,7 @@ export function SectionManagement() {
         await fetch(`${API_URL}?id=${selectedSection.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sectionData),
+          body: JSON.stringify(sectionData)
         });
         notifier.updated();
       } else {
@@ -98,7 +98,7 @@ export function SectionManagement() {
         await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sectionData),
+          body: JSON.stringify(sectionData)
         });
         notifier.added();
       }
@@ -127,7 +127,7 @@ export function SectionManagement() {
     if (selectedSection) {
       try {
         await fetch(`${API_URL}?id=${selectedSection.id}`, {
-          method: "DELETE",
+          method: "DELETE"
         });
         notifier.deleted();
         await fetchSections();
@@ -160,7 +160,7 @@ export function SectionManagement() {
       await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bulk: newSections }),
+        body: JSON.stringify({ bulk: newSections })
       });
       notifier.bulkUploaded();
       await fetchSections();

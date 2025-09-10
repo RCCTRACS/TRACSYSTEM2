@@ -1,5 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 interface FilterUserDialogProps {
   onFilter: (department: string) => void;
@@ -19,7 +23,10 @@ export function FilterUserDialog({ onFilter, onClose }: FilterUserDialogProps) {
         {/* ITS Button */}
         <Button
           className="bg-white text-[#5C3A21] border-2 border-[#5C3A21] rounded-2xl px-12 py-4 font-semibold shadow-md hover:bg-[#5C3A21] hover:text-white transform hover:scale-105 hover:shadow-lg transition-all duration-300"
-          onClick={() => { onFilter("ITS"); onClose(); }}
+          onClick={() => {
+            onFilter("ITS");
+            onClose();
+          }}
         >
           ITS
         </Button>
@@ -27,7 +34,10 @@ export function FilterUserDialog({ onFilter, onClose }: FilterUserDialogProps) {
         {/* Teacher Button */}
         <Button
           className="bg-white text-[#5C3A21] border-2 border-[#5C3A21] rounded-2xl px-12 py-4 font-semibold shadow-md hover:bg-[#5C3A21] hover:text-white transform hover:scale-105 hover:shadow-lg transition-all duration-300"
-          onClick={() => { onFilter("Teacher"); onClose(); }}
+          onClick={() => {
+            onFilter("Teacher");
+            onClose();
+          }}
         >
           Teacher
         </Button>
@@ -35,7 +45,10 @@ export function FilterUserDialog({ onFilter, onClose }: FilterUserDialogProps) {
         {/* Show All Button */}
         <Button
           className="bg-white text-[#5C3A21] border-2 border-[#5C3A21] rounded-2xl px-12 py-4 font-semibold shadow-md hover:bg-[#5C3A21] hover:text-white transform hover:scale-105 hover:shadow-lg transition-all duration-300"
-          onClick={() => { onFilter("All"); onClose(); }}
+          onClick={() => {
+            onFilter("All");
+            onClose();
+          }}
         >
           Show All
         </Button>

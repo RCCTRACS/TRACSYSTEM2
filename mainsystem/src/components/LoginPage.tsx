@@ -1,40 +1,47 @@
-import React, { useState, type ChangeEvent, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './LoginPage.css';
+import React, { useState, type ChangeEvent, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import "./LoginPage.css";
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorMsg("");
     setLoading(true);
 
     try {
-      const res = await fetch('http://192.168.0.122/capstone/mainsystem/backend/login.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await fetch(
+        "http://192.168.0.137/capstone/mainsystem/backend/login.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        }
+      );
 
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
 
-      const data: { success: boolean; message?: string; userId?: number } = await res.json();
+      const data: { success: boolean; message?: string; userId?: number } =
+        await res.json();
 
       if (data.success) {
-        localStorage.setItem('authEmail', email);
-        localStorage.setItem('authUserId', data.userId?.toString() || '');
-        navigate('/auth'); 
+        localStorage.setItem("authEmail", email);
+        localStorage.setItem("authUserId", data.userId?.toString() || "");
+        navigate("/auth");
       } else {
-        setErrorMsg(data.message || 'Login failed.');
+        // 🔑 clear old session if login fails (important after user is deleted)
+        localStorage.removeItem("authEmail");
+        localStorage.removeItem("authUserId");
+        setErrorMsg(data.message || "Login failed.");
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setErrorMsg('Unable to connect to the server. Please try again later.');
+      console.error("Login error:", error);
+      setErrorMsg("Unable to connect to the server. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -58,7 +65,9 @@ const LoginPage: React.FC = () => {
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setEmail(e.target.value)
+              }
               required
             />
 
@@ -67,28 +76,18 @@ const LoginPage: React.FC = () => {
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setPassword(e.target.value)
+              }
               required
             />
 
             <button type="submit" disabled={loading}>
-              {loading ? 'Logging in...' : 'Log In'}
+              {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
 
           {errorMsg && <p className="error-msg">{errorMsg}</p>}
-
-          {/* ✅ Create account link restored
-          <p className="register-link">
-            Don’t have an account?{' '}
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => navigate('/register')}
-            >
-              Create one
-            </button>
-          </p> */}
         </div>
       </div>
     </div>

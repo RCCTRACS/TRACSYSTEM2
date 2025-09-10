@@ -9,7 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import {
   Search,
@@ -19,7 +19,7 @@ import {
   Upload,
   Edit,
   Trash2,
-  FileText,
+  FileText
 } from "lucide-react";
 
 import { GradeFormDialog } from "./GradeFormDialog";
@@ -50,7 +50,7 @@ export function GradeManagement() {
   const { toast } = useToast();
 
   const API_URL =
-    "http://192.168.0.122/capstone/mainsystem/backend/grade_api.php";
+    "http://192.168.0.137/capstone/mainsystem/backend/grade_api.php";
 
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
@@ -66,7 +66,7 @@ export function GradeManagement() {
       toast({
         title: "Error",
         description: "Failed to load grades.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -101,14 +101,14 @@ export function GradeManagement() {
           body: JSON.stringify({
             id: selectedGrade.id,
             grade_name: gradeData.grade_name,
-            type: gradeData.type || "Student",
-          }),
+            type: gradeData.type || "Student"
+          })
         });
         const data = await res.json();
         if (data.success) {
           toast({
             title: "Updated",
-            description: "Grade updated successfully!",
+            description: "Grade updated successfully!"
           });
           fetchGrades();
         } else throw new Error(data.error);
@@ -119,8 +119,8 @@ export function GradeManagement() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             grade_name: gradeData.grade_name,
-            type: gradeData.type || "Student",
-          }),
+            type: gradeData.type || "Student"
+          })
         });
         const data = await res.json();
         if (data.success) {
@@ -132,7 +132,7 @@ export function GradeManagement() {
       toast({
         title: "Error",
         description: err.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
 
@@ -158,13 +158,13 @@ export function GradeManagement() {
       const res = await fetch(API_URL, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: selectedGrade.id }),
+        body: JSON.stringify({ id: selectedGrade.id })
       });
       const data = await res.json();
       if (data.success) {
         toast({
           title: "Deleted",
-          description: "Grade deleted successfully!",
+          description: "Grade deleted successfully!"
         });
         fetchGrades();
       } else throw new Error(data.error);
@@ -172,7 +172,7 @@ export function GradeManagement() {
       toast({
         title: "Error",
         description: err.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
 
@@ -203,7 +203,7 @@ export function GradeManagement() {
       toast({
         title: "Error",
         description: "Invalid file format.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -216,7 +216,7 @@ export function GradeManagement() {
         await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ grade_name, type }),
+          body: JSON.stringify({ grade_name, type })
         });
       }
     }
@@ -365,7 +365,7 @@ export function GradeManagement() {
                 "Grade 9",
                 "Grade 10",
                 "Grade 11",
-                "Grade 12",
+                "Grade 12"
               ]}
               onFilter={(grade) => {
                 if (grade === "All") {

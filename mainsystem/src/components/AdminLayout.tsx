@@ -11,9 +11,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex min-h-screen w-full bg-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
-          <main className="flex-1 px-6 py-6 bg-admin-content">
-            {children}
-          </main>
+          <main className="flex-1 px-6 py-6 bg-Admin-content">{children}</main>
         </div>
       </div>
     </SidebarProvider>

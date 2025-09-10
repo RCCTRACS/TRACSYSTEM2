@@ -2358,7 +2358,7 @@ class PHPMailer
     }
 
     /**
-     * Close the active SMTP session if one exists.
+     * Close the Active SMTP session if one exists.
      */
     public function smtpClose()
     {

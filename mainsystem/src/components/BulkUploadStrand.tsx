@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useRef } from "react";
@@ -54,7 +54,7 @@ export function BulkUploadStrand({ onUpload, onClose }: BulkUploadStrandProps) {
             return {
               id: Date.now().toString() + idx, // temporary unique ID
               strand,
-              type,
+              type
             };
           })
           .filter((row): row is Strand => row !== null);
@@ -77,11 +77,11 @@ export function BulkUploadStrand({ onUpload, onClose }: BulkUploadStrandProps) {
 
     try {
       const response = await fetch(
-        "http://192.168.0.122/capstone/mainsystem/backend/strand_api.php",
+        "http://192.168.0.137/capstone/mainsystem/backend/strand_api.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bulk: preview }), // ✅ backend expects {bulk: []}
+          body: JSON.stringify({ bulk: preview }) // ✅ backend expects {bulk: []}
         }
       );
 

@@ -12,22 +12,24 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 
 interface BulkUploadDepartmentProps {
-  onUpload: (file: File) => Promise<void> | void;
   onClose: () => void;
+  onSuccess?: () => void; // optional callback to refresh table
 }
 
 export function BulkUploadDepartment({
-  onUpload,
   onClose,
+  onSuccess,
 }: BulkUploadDepartmentProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string>("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
       setError("");
+      setMessage("");
     }
   };
 
@@ -39,10 +41,34 @@ export function BulkUploadDepartment({
 
     try {
       setLoading(true);
-      await onUpload(file);
-      setFile(null);
-      onClose();
-    } catch {
+      setError("");
+      setMessage("");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(
+        "http://localhost/capstone/mainsystem/backend/department_api.php",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const result = await res.json();
+
+      if (res.ok && result.success) {
+        setMessage(
+          `✅ Upload complete: Inserted ${result.inserted}, Updated ${result.updated}, Skipped ${result.skipped}`
+        );
+        setFile(null);
+        if (onSuccess) onSuccess(); // refresh table
+        onClose();
+      } else {
+        setError(result.error || "Upload failed. Please check your file.");
+      }
+    } catch (err) {
+      console.error(err);
       setError("Upload failed. Please try again.");
     } finally {
       setLoading(false);
@@ -58,23 +84,26 @@ export function BulkUploadDepartment({
       </DialogHeader>
 
       <div className="space-y-6 mt-4">
-        {/* File Input */}
         <div className="space-y-2">
           <Label className="font-bold text-black">Choose File</Label>
           <Input
             type="file"
-            accept=".csv,.xlsx"
+            accept=".csv"
             className="w-full rounded-lg border-[3px] border-[#3E1F0F] focus:border-[#3E1F0F] focus:ring-1 focus:ring-[#3E1F0F]"
             onChange={handleFileChange}
             disabled={loading}
           />
           <p className="text-xs text-muted-foreground">
-            {file ? file.name : "No file chosen"}
+            {file ? file.name : "Expected headers: department,type"}
           </p>
-          {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
+          {error && (
+            <p className="text-xs text-red-500 font-semibold">{error}</p>
+          )}
+          {message && (
+            <p className="text-xs text-green-600 font-semibold">{message}</p>
+          )}
         </div>
 
-        {/* Footer Buttons */}
         <div className="flex justify-end gap-3 mt-2">
           <Button
             variant="outline"
@@ -82,6 +111,7 @@ export function BulkUploadDepartment({
             onClick={() => {
               setFile(null);
               setError("");
+              setMessage("");
               onClose();
             }}
             disabled={loading}
