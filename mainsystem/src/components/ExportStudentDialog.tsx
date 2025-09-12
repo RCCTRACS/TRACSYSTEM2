@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Student } from "./StudentManagement";
 
@@ -11,22 +11,35 @@ interface ExportStudentDialogProps {
   onClose: () => void;
 }
 
-export function ExportStudentDialog({ students, onClose }: ExportStudentDialogProps) {
+export function ExportStudentDialog({
+  students,
+  onClose
+}: ExportStudentDialogProps) {
   const handleExport = () => {
-    const headers = ["Student ID", "Barcode ID", "Name", "Year Level", "Department", "Parent Email"];
-    const rows = students.map((student) => [
-      student.id,
-      student.barcodeId,
-      student.name,
-      student.yearLevel,
-      student.department,
-      student.parentEmail,
-    ]);
+    // Headers aligned with bulk upload template
+    const headers = [
+      "barcode_id",
+      "student_name",
+      "year_level",
+      "department",
+      "parent_email"
+    ];
 
+    // Map students to rows, with proper escaping
+    const rows = students.map((student) =>
+      headers.map((key) => {
+        const value = student[key as keyof Student] || "";
+        // Escape quotes and commas
+        return `"${String(value).replace(/"/g, '""')}"`;
+      })
+    );
+
+    // Combine headers and rows
     const csvContent =
       "data:text/csv;charset=utf-8," +
       [headers, ...rows].map((e) => e.join(",")).join("\n");
 
+    // Create and click download link
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -41,7 +54,9 @@ export function ExportStudentDialog({ students, onClose }: ExportStudentDialogPr
   return (
     <DialogContent className="sm:max-w-[500px] bg-popover p-6 rounded-xl shadow-md">
       <DialogHeader className="pb-4 border-b border-[#5C3A21]/30">
-        <DialogTitle className="text-xl font-bold text-black">Export Students</DialogTitle>
+        <DialogTitle className="text-xl font-bold text-black">
+          Export Students
+        </DialogTitle>
       </DialogHeader>
 
       <div className="mt-6 flex flex-col space-y-8">
