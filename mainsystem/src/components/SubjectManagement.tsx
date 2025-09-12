@@ -20,32 +20,49 @@ import { FilterSubjectDialog } from "./FilterSubjectDialog";
 import { ExportSubjectDialog } from "./ExportSubjectDialog";
 import { BulkUploadSubject } from "./BulkUploadSubject";
 
-export interface Subject {
-  id: number;
-  code: string;
-  name: string;
-  grade: string; // from joined grades table
-  department: string; // from joined departments table
-  instructor: string; // full name
-  instructor_email: string;
-  time?: string;
-  // hidden but useful for edits
-  grade_id?: number;
-  department_id?: number;
-  teacher_id?: number;
-}
+type DisplaySubject = {
+  subject_code: string;
+  subject_name: string;
+  subject_time: string;
+  department: string;
+  grade?: string;
+  strand?: string;
+  section?: string;
+  instructor: string;
+  created_at?: string;
+};
 
-const API_URL = "http://localhost/your-backend/subject_api.php"; // adjust path
+type FormSubject = {
+  subject_code: string;
+  subject_name: string;
+  subject_time: string;
+  department: string;
+  grade?: string;
+  strand?: string;
+  section?: string;
+  instructor: string;
+};
+
+const API_URL =
+  "http://192.168.0.137/capstone/mainsystem/backend/subject_api.php";
 
 export function SubjectManagement() {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<DisplaySubject[]>([]);
+  const [filteredSubjects, setFilteredSubjects] = useState<DisplaySubject[]>(
+    []
+  );
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
 
+  const [editingSubject, setEditingSubject] = useState<FormSubject | null>(
+    null
+  );
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const [selectedForDelete, setSelectedForDelete] =
+    useState<DisplaySubject | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
@@ -54,7 +71,6 @@ export function SubjectManagement() {
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
   const outlineBox = "border-2 border-[#5C4033] rounded-lg shadow-sm bg-white";
 
-  // Fetch subjects
   useEffect(() => {
     fetchSubjects();
   }, []);
@@ -67,8 +83,10 @@ export function SubjectManagement() {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
-      if (data.success) {
+      if (data.success && Array.isArray(data.subjects)) {
         setSubjects(data.subjects);
+      } else {
+        setSubjects([]);
       }
     } catch (err) {
       console.error("Failed to fetch subjects:", err);
@@ -77,94 +95,85 @@ export function SubjectManagement() {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
+    const t = term.toLowerCase();
     const filtered = subjects.filter(
       (s) =>
-        s.name.toLowerCase().includes(term.toLowerCase()) ||
-        s.code.toLowerCase().includes(term.toLowerCase()) ||
-        s.grade.toLowerCase().includes(term.toLowerCase()) ||
-        s.instructor.toLowerCase().includes(term.toLowerCase())
+        s.subject_name.toLowerCase().includes(t) ||
+        s.subject_code.toLowerCase().includes(t) ||
+        (s.grade ?? "").toLowerCase().includes(t) ||
+        (s.instructor ?? "").toLowerCase().includes(t)
     );
     setFilteredSubjects(filtered);
   };
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: FormSubject) => {
     try {
-      if (selectedSubject) {
+      if (editingSubject) {
         // Update
         await fetch(API_URL, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: selectedSubject.id,
-            code: data.code,
-            name: data.name,
-            department_id: data.department_id,
-            grade_id: data.grade_id,
-            teacher_id: data.teacher_id,
-            time: data.time || ""
-          })
+          body: JSON.stringify(data)
         });
       } else {
         // Create
         await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: data.code,
-            name: data.name,
-            department_id: data.department_id,
-            grade_id: data.grade_id,
-            teacher_id: data.teacher_id,
-            time: data.time || ""
-          })
+          body: JSON.stringify(data)
         });
       }
-      fetchSubjects();
+      await fetchSubjects();
     } catch (err) {
       console.error("Save failed:", err);
+    } finally {
+      setIsAddOpen(false);
+      setIsEditOpen(false);
+      setEditingSubject(null);
     }
-    closeDialogs();
   };
 
-  const handleEdit = (subject: Subject) => {
-    setSelectedSubject(subject);
+  const handleEdit = (s: DisplaySubject) => {
+    setEditingSubject({
+      subject_code: s.subject_code,
+      subject_name: s.subject_name,
+      subject_time: s.subject_time,
+      department: s.department,
+      grade: s.grade,
+      strand: s.strand,
+      section: s.section,
+      instructor: s.instructor
+    });
     setIsEditOpen(true);
   };
 
-  const handleDelete = (subject: Subject) => {
-    setSelectedSubject(subject);
+  const handleDelete = (s: DisplaySubject) => {
+    setSelectedForDelete(s);
     setIsDeleteOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedSubject) {
-      try {
-        await fetch(API_URL, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: selectedSubject.id })
-        });
-        fetchSubjects();
-      } catch (err) {
-        console.error("Delete failed:", err);
-      }
-      closeDialogs();
+    if (!selectedForDelete) return;
+    try {
+      await fetch(
+        `${API_URL}?subject_code=${encodeURIComponent(
+          selectedForDelete.subject_code
+        )}`,
+        { method: "DELETE" }
+      );
+      await fetchSubjects();
+    } catch (err) {
+      console.error("Delete failed:", err);
+    } finally {
+      setIsDeleteOpen(false);
+      setSelectedForDelete(null);
     }
   };
 
-  const closeDialogs = () => {
-    setIsAddOpen(false);
-    setIsEditOpen(false);
-    setIsDeleteOpen(false);
-    setIsFilterOpen(false);
-    setIsExportOpen(false);
-    setIsBulkOpen(false);
-    setSelectedSubject(null);
-  };
-
   const handleDownloadTemplate = () => {
-    let csvContent = "Code,Name,Department ID,Grade ID,Teacher ID,Time\n";
-    csvContent += "CS101,Intro to Computer Science,1,2,5,08:00-10:00\n";
+    let csvContent =
+      "Subject Code,Subject Name,Subject Time,Department,Grade/Year,Strand,Section,Instructor\n";
+    csvContent += "";
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -209,7 +218,7 @@ export function SubjectManagement() {
             <DialogTrigger asChild>
               <Button
                 className={outlineBtn}
-                onClick={() => setSelectedSubject(null)}
+                onClick={() => setEditingSubject(null)}
               >
                 <Plus className="h-4 w-4 mr-2" /> Add
               </Button>
@@ -269,12 +278,34 @@ export function SubjectManagement() {
               </Button>
             </DialogTrigger>
             <FilterSubjectDialog
-              subjects={subjects.map((s) => s.name)}
-              onFilter={(year, subject) => {
+              onFilter={(department, grade, strand, section) => {
                 let filtered = subjects;
-                if (year) filtered = filtered.filter((s) => s.grade === year);
-                if (subject)
-                  filtered = filtered.filter((s) => s.name === subject);
+
+                // Normalize for flexible match
+                const norm = (val?: string | null) =>
+                  val ? val.trim().toLowerCase() : "";
+
+                if (department) {
+                  filtered = filtered.filter(
+                    (s) => norm(s.department) === norm(department)
+                  );
+                }
+                if (grade) {
+                  filtered = filtered.filter(
+                    (s) => norm(s.grade) === norm(grade)
+                  );
+                }
+                if (strand) {
+                  filtered = filtered.filter(
+                    (s) => norm(s.strand) === norm(strand)
+                  );
+                }
+                if (section) {
+                  filtered = filtered.filter(
+                    (s) => norm(s.section) === norm(section)
+                  );
+                }
+
                 setFilteredSubjects(filtered);
               }}
               onClose={() => setIsFilterOpen(false)}
@@ -288,9 +319,9 @@ export function SubjectManagement() {
         <CardHeader />
         <CardContent>
           <div className="grid grid-cols-6 gap-x-6 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
-            <div>Code</div>
-            <div>Name</div>
-            <div>Grade</div>
+            <div>Subject Code</div>
+            <div>Subject Name</div>
+            <div>Grade/Year</div>
             <div>Department</div>
             <div>Instructor</div>
             <div></div>
@@ -304,14 +335,14 @@ export function SubjectManagement() {
             ) : (
               filteredSubjects.map((s) => (
                 <div
-                  key={s.id}
+                  key={s.subject_code}
                   className="grid grid-cols-6 gap-x-6 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
-                  <div className="font-medium">{s.code}</div>
-                  <div>{s.name}</div>
-                  <div>{s.grade}</div>
-                  <div>{s.department}</div>
-                  <div>{s.instructor}</div>
+                  <div className="font-medium">{s.subject_code}</div>
+                  <div>{s.subject_name}</div>
+                  <div>{s.grade ?? "-"}</div>
+                  <div>{s.department ?? "-"}</div>
+                  <div>{s.instructor ?? "-"}</div>
                   <div className="flex justify-center gap-2">
                     <Button
                       variant="ghost"
@@ -337,19 +368,25 @@ export function SubjectManagement() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <SubjectFormDialog
-          subject={selectedSubject}
-          onSave={handleSave}
-          onClose={closeDialogs}
-        />
+        {editingSubject && (
+          <SubjectFormDialog
+            key={editingSubject.subject_code} // 🔑 forces remount when switching subjects
+            subject={editingSubject}
+            onSave={handleSave}
+            onClose={() => {
+              setIsEditOpen(false);
+              setEditingSubject(null);
+            }}
+          />
+        )}
       </Dialog>
 
       {/* Delete Dialog */}
       <DeleteSubjectDialog
         isOpen={isDeleteOpen}
-        onClose={closeDialogs}
+        onClose={() => setIsDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
-        subjectName={selectedSubject?.name || ""}
+        subjectName={selectedForDelete?.subject_name || ""}
       />
     </div>
   );

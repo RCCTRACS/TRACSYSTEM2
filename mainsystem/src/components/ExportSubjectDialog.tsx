@@ -13,9 +13,29 @@ interface ExportSubjectDialogProps {
 
 export function ExportSubjectDialog({ subjects, onClose }: ExportSubjectDialogProps) {
   const handleExport = () => {
-    const headers = ["Subject ID", "Name", "Year Level", "Instructor"];
-    const rows = subjects.map(s => [s.id, s.name, s.yearLevel, s.instructor]);
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const headers = [
+      "Subject Code",
+      "Subject Name",
+      "Subject Time",
+      "Department",
+      "Grade",
+      "Strand",
+      "Section",
+      "Instructor",
+    ];
+
+    const rows = subjects.map((s) => [
+      s.subject_code ?? "",
+      s.subject_name ?? "",
+      s.subject_time ?? "",
+      s.department ?? "",
+      s.grade ?? "",
+      s.strand ?? "",
+      s.section ?? "",
+      s.instructor ?? "",
+    ]);
+
+    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");

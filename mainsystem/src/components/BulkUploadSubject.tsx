@@ -7,11 +7,14 @@ import { Upload } from "lucide-react";
 import Papa from "papaparse";
 
 export interface Subject {
-  id: string;
-  name: string;
-  yearLevel: string;
-  instructor: string;
-  time?: string;
+  subject_code: string;
+  subject_name: string;
+  subject_time?: string;
+  department?: string;
+  grade?: string;
+  strand?: string;
+  section?: string;
+  instructor?: string;
 }
 
 interface BulkUploadSubjectProps {
@@ -37,7 +40,16 @@ export function BulkUploadSubject({ onUpload, onClose }: BulkUploadSubjectProps)
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          const expectedHeaders = ["Subject ID", "Subject Name", "Year Level", "Instructor"];
+          const expectedHeaders = [
+            "Subject Code",
+            "Subject Name",
+            "Subject Time",
+            "Department",
+            "Grade",
+            "Strand",
+            "Section",
+            "Instructor",
+          ];
           const headers = results.meta.fields?.map((h) => h.trim()) || [];
 
           const isValid = expectedHeaders.every((h) => headers.includes(h));
@@ -47,11 +59,13 @@ export function BulkUploadSubject({ onUpload, onClose }: BulkUploadSubjectProps)
           }
 
           const newSubjects: Subject[] = results.data.map((row) => ({
-            id:
-              row["Subject ID"]?.trim() ||
-              Date.now().toString() + Math.random().toString(36).slice(2),
-            name: row["Subject Name"]?.trim() || "",
-            yearLevel: row["Year Level"]?.trim() || "",
+            subject_code: row["Subject Code"]?.trim() || "",
+            subject_name: row["Subject Name"]?.trim() || "",
+            subject_time: row["Subject Time"]?.trim() || "",
+            department: row["Department"]?.trim() || "",
+            grade: row["Grade"]?.trim() || "",
+            strand: row["Strand"]?.trim() || "",
+            section: row["Section"]?.trim() || "",
             instructor: row["Instructor"]?.trim() || "",
           }));
 
