@@ -1,91 +1,136 @@
-import { useState, useEffect } from "react";
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+"use client";
 
-interface Subject {
-  subject_code: string;
-  subject_name: string;
-  subject_time?: string;
-  department?: string;
-  grade?: string;
-  strand?: string;
-  section?: string;
-  instructor?: string;
-}
+import { useState, useEffect } from "react";
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem
+} from "@/components/ui/select";
 
 interface FilterSubjectDialogProps {
-  subjects: Subject[];
-  onFilter: (department: string | null, grade: string | null, strand: string | null, section: string | null, subject: string | null) => void;
+  onFilter: (
+    department: string | null,
+    grade: string | null,
+    strand: string | null,
+    section: string | null
+  ) => void;
   onClose: () => void;
 }
 
-export function FilterSubjectDialog({ subjects, onFilter, onClose }: FilterSubjectDialogProps) {
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [grades, setGrades] = useState<string[]>([]);
-  const [strands, setStrands] = useState<string[]>([]);
-  const [sections, setSections] = useState<string[]>([]);
+export function FilterSubjectDialog({
+  onFilter,
+  onClose
+}: FilterSubjectDialogProps) {
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [grades, setGrades] = useState<any[]>([]);
+  const [strands, setStrands] = useState<any[]>([]);
+  const [sections, setSections] = useState<any[]>([]);
+
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedStrand, setSelectedStrand] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
-  // Dynamically populate departments
-  useEffect(() => {
-    const depts = Array.from(new Set(subjects.map(s => s.department).filter(Boolean)));
-    setDepartments(depts as string[]);
-  }, [subjects]);
+  const normalize = (data: any, key: string) => {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data[key])) return data[key];
+    return [];
+  };
 
-  // Dynamically populate grades based on department
+  // Fetch dropdown data
   useEffect(() => {
-    if (!selectedDept) {
-      setGrades([]);
-      return;
-    }
-    const filteredGrades = Array.from(
-      new Set(subjects.filter(s => s.department === selectedDept).map(s => s.grade).filter(Boolean))
-    );
-    setGrades(filteredGrades as string[]);
-  }, [selectedDept, subjects]);
-
-  // Dynamically populate strands based on grade
-  useEffect(() => {
-    if (!selectedDept || !selectedGrade) {
-      setStrands([]);
-      return;
-    }
-    const filteredStrands = Array.from(
-      new Set(
-        subjects.filter(s => s.department === selectedDept && s.grade === selectedGrade)
-                .map(s => s.strand)
-                .filter(Boolean)
-      )
-    );
-    setStrands(filteredStrands as string[]);
-  }, [selectedDept, selectedGrade, subjects]);
-
-  // Dynamically populate sections based on grade & strand
-  useEffect(() => {
-    if (!selectedDept || !selectedGrade) {
-      setSections([]);
-      return;
-    }
-    const filteredSections = Array.from(
-      new Set(
-        subjects.filter(
-          s =>
-            s.department === selectedDept &&
-            s.grade === selectedGrade &&
-            (selectedStrand ? s.strand === selectedStrand : true)
+    fetch("http://192.168.1.13/capstone/mainsystem/backend/department_api.php")
+      .then((res) => res.json())
+      .then((data) =>
+        setDepartments(
+          normalize(data, "departments").filter(
+            (d: any) => d.department !== "ITS" && d.department !== "Teacher"
+          )
         )
-        .map(s => s.section)
-        .filter(Boolean)
       )
-    );
-    setSections(filteredSections as string[]);
-  }, [selectedDept, selectedGrade, selectedStrand, subjects]);
+      .catch(() => setDepartments([]));
 
+    fetch("http://192.168.1.13/capstone/mainsystem/backend/grade_api.php")
+      .then((res) => res.json())
+      .then((data) => setGrades(normalize(data, "grades")))
+      .catch(() => setGrades([]));
+
+    fetch("http://192.168.1.13/capstone/mainsystem/backend/strand_api.php")
+      .then((res) => res.json())
+      .then((data) => setStrands(normalize(data, "strands")))
+      .catch(() => setStrands([]));
+
+    fetch("http://192.168.1.13/capstone/mainsystem/backend/section_api.php")
+      .then((res) => res.json())
+      .then((data) => setSections(normalize(data, "sections")))
+      .catch(() => setSections([]));
+  }, []);
+
+  // --- Filtering logic (copied from SubjectFormDialog) ---
+  const filteredGrades = (() => {
+    if (!selectedDept) return grades;
+
+    const collegePrograms = [
+      "ABEL",
+      "BEED",
+      "BSA",
+      "BSBA",
+      "BSCE",
+      "BSED",
+      "BSHM",
+      "BSIT",
+      "BSTM"
+    ];
+
+    if (collegePrograms.includes(selectedDept)) {
+      return grades.filter((g) =>
+        ["1st Year", "2nd Year", "3rd Year", "4th Year"].includes(
+          g.grade || g.grade_name || g.grade_level
+        )
+      );
+    }
+
+    if (selectedDept === "SHS") {
+      return grades.filter((g) =>
+        ["Grade 11", "Grade 12"].includes(
+          g.grade || g.grade_name || g.grade_level
+        )
+      );
+    }
+
+    if (selectedDept === "JHS") {
+      return grades.filter((g) =>
+        ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(
+          g.grade || g.grade_name || g.grade_level
+        )
+      );
+    }
+
+    return grades;
+  })();
+
+  const filteredStrands = selectedDept === "SHS" ? strands : [];
+  const filteredSections = selectedDept === "JHS" ? sections : [];
+
+  // --- Apply / Reset ---
   const handleApplyFilter = () => {
-    onFilter(selectedDept, selectedGrade, selectedStrand, selectedSection, null);
+    const normalizeVal = (val: string | null) =>
+      val ? val.trim().toLowerCase() : null;
+
+    onFilter(
+      normalizeVal(selectedDept),
+      normalizeVal(selectedGrade),
+      normalizeVal(selectedStrand),
+      normalizeVal(selectedSection)
+    );
     onClose();
   };
 
@@ -94,117 +139,127 @@ export function FilterSubjectDialog({ subjects, onFilter, onClose }: FilterSubje
     setSelectedGrade(null);
     setSelectedStrand(null);
     setSelectedSection(null);
-    onFilter(null, null, null, null, null);
+    onFilter(null, null, null, null);
     onClose();
   };
 
+  const fieldStyle =
+    "border-2 border-[#5C4033] rounded-md focus:ring-0 focus:border-[#5C4033]";
+
   return (
-    <DialogContent className="sm:max-w-[620px] bg-gradient-to-br from-[#fdfaf6] to-[#fff7f0] p-8 rounded-3xl shadow-2xl border border-[#D9B99B]">
-      <DialogHeader className="pb-4">
-        <DialogTitle className="text-2xl font-extrabold text-black text-left">
+    <DialogContent className="sm:max-w-[500px] rounded-2xl shadow-md bg-white p-6">
+      <DialogHeader>
+        <DialogTitle className="text-lg font-semibold">
           Filter Subjects
         </DialogTitle>
       </DialogHeader>
 
-      {/* Department */}
-      <div className="mt-4">
-        <h3 className="text-lg font-semibold text-black mb-2">Department</h3>
-        <div className="flex flex-wrap gap-3">
-          {departments.map((dept) => (
-            <Button
-              key={dept}
-              variant={selectedDept === dept ? "default" : "outline"}
-              className="bg-white text-[#5C3A21] border-2 border-[#5C3A21] rounded-2xl px-6 py-2 font-semibold shadow-md hover:bg-[#5C3A21] hover:text-white transition-all duration-300"
-              onClick={() => {
-                setSelectedDept(dept);
-                setSelectedGrade(null);
+      <div className="space-y-4">
+        {/* Department */}
+        <div>
+          <p className="mb-1 text-sm font-medium">Department</p>
+          <Select
+            value={selectedDept ?? ""}
+            onValueChange={(val) => {
+              setSelectedDept(val || null);
+              setSelectedGrade(null);
+              setSelectedStrand(null);
+              setSelectedSection(null);
+            }}
+          >
+            <SelectTrigger className={fieldStyle}>
+              <SelectValue placeholder="Select Department" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map((d) => (
+                <SelectItem key={d.id} value={d.department}>
+                  {d.department}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Grade */}
+        {filteredGrades.length > 0 && (
+          <div>
+            <p className="mb-1 text-sm font-medium">Grade / Year</p>
+            <Select
+              value={selectedGrade ?? ""}
+              onValueChange={(val) => {
+                setSelectedGrade(val || null);
                 setSelectedStrand(null);
                 setSelectedSection(null);
               }}
             >
-              {dept}
-            </Button>
-          ))}
-        </div>
+              <SelectTrigger className={fieldStyle}>
+                <SelectValue placeholder="Select Grade" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredGrades.map((g) => {
+                  const val = g.grade || g.grade_name || g.grade_level || "";
+                  return (
+                    <SelectItem key={g.id} value={val}>
+                      {val}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Strand (SHS only) */}
+        {selectedDept === "SHS" && (
+          <div>
+            <p className="mb-1 text-sm font-medium">Strand</p>
+            <Select
+              value={selectedStrand ?? ""}
+              onValueChange={(val) => setSelectedStrand(val || null)}
+            >
+              <SelectTrigger className={fieldStyle}>
+                <SelectValue placeholder="Select Strand" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredStrands.map((s) => (
+                  <SelectItem key={s.id} value={s.strand}>
+                    {s.strand}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Section (JHS only) */}
+        {selectedDept === "JHS" && (
+          <div>
+            <p className="mb-1 text-sm font-medium">Section</p>
+            <Select
+              value={selectedSection ?? ""}
+              onValueChange={(val) => setSelectedSection(val || null)}
+            >
+              <SelectTrigger className={fieldStyle}>
+                <SelectValue placeholder="Select Section" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredSections.map((s) => (
+                  <SelectItem key={s.id} value={s.section}>
+                    {s.section}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
-      {/* Grade */}
-      {grades.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold text-black mb-2">Grade / Year</h3>
-          <div className="flex flex-wrap gap-3">
-            {grades.map((g) => (
-              <Button
-                key={g}
-                variant={selectedGrade === g ? "default" : "outline"}
-                className="bg-white text-[#5C3A21] border-2 border-[#5C3A21] rounded-2xl px-6 py-2 font-semibold shadow-md hover:bg-[#5C3A21] hover:text-white transition-all duration-300"
-                onClick={() => {
-                  setSelectedGrade(g);
-                  setSelectedStrand(null);
-                  setSelectedSection(null);
-                }}
-              >
-                {g}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Strand */}
-      {strands.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold text-black mb-2">Strand</h3>
-          <div className="flex flex-wrap gap-3">
-            {strands.map((s) => (
-              <Button
-                key={s}
-                variant={selectedStrand === s ? "default" : "outline"}
-                className="bg-white text-[#5C3A21] border-2 border-[#5C3A21] rounded-2xl px-6 py-2 font-semibold shadow-md hover:bg-[#5C3A21] hover:text-white transition-all duration-300"
-                onClick={() => {
-                  setSelectedStrand(s);
-                  setSelectedSection(null);
-                }}
-              >
-                {s}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Section */}
-      {sections.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold text-black mb-2">Section</h3>
-          <div className="flex flex-wrap gap-3">
-            {sections.map((sec) => (
-              <Button
-                key={sec}
-                variant={selectedSection === sec ? "default" : "outline"}
-                className="bg-white text-[#5C3A21] border-2 border-[#5C3A21] rounded-2xl px-6 py-2 font-semibold shadow-md hover:bg-[#5C3A21] hover:text-white transition-all duration-300"
-                onClick={() => setSelectedSection(sec)}
-              >
-                {sec}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Footer */}
-      <div className="mt-6 flex gap-3 justify-end">
-        <Button
-          variant="outline"
-          className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200 rounded-lg"
-          onClick={resetFilter}
-        >
+      <div className="mt-6 flex justify-end gap-2">
+        <Button variant="outline" onClick={resetFilter}>
           Show All
         </Button>
-        <Button
-          className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200 rounded-lg"
-          onClick={handleApplyFilter}
-        >
+        <Button className="bg-[#5C3A21] text-white" onClick={handleApplyFilter}>
           Apply Filter
         </Button>
       </div>

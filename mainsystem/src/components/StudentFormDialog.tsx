@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   DialogContent,
@@ -17,12 +19,11 @@ import {
 } from "@/components/ui/select";
 
 interface Student {
-  id: string;
-  barcodeId: string;
-  name: string;
-  yearLevel: string;
+  barcode_id: string;
+  student_name: string;
+  year_level: string;
   department: string;
-  parentEmail: string;
+  parent_email: string;
 }
 
 interface StudentFormDialogProps {
@@ -37,30 +38,95 @@ export function StudentFormDialog({
   onClose
 }: StudentFormDialogProps) {
   const [formState, setFormState] = useState<Student>({
-    id: "",
-    barcodeId: "",
-    name: "",
-    yearLevel: "",
+    barcode_id: "",
+    student_name: "",
+    year_level: "",
     department: "",
-    parentEmail: ""
+    parent_email: ""
   });
+
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [grades, setGrades] = useState<any[]>([]);
 
   useEffect(() => {
     if (student) {
       setFormState(student);
     } else {
       setFormState({
-        id: "",
-        barcodeId: "",
-        name: "",
-        yearLevel: "",
+        barcode_id: "",
+        student_name: "",
+        year_level: "",
         department: "",
-        parentEmail: ""
+        parent_email: ""
       });
     }
   }, [student]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // fetch dropdown data
+  useEffect(() => {
+    fetch("http://192.168.1.13/capstone/mainsystem/backend/department_api.php")
+      .then((res) => res.json())
+      .then((data) =>
+        setDepartments(
+          (data.departments || data || []).filter(
+            (d: any) => d.department !== "ITS" && d.department !== "Teacher"
+          )
+        )
+      )
+      .catch(() => setDepartments([]));
+
+    fetch("http://192.168.1.13/capstone/mainsystem/backend/grade_api.php")
+      .then((res) => res.json())
+      .then((data) => setGrades(data.grades || data || []))
+      .catch(() => setGrades([]));
+  }, []);
+
+  // filter grades based on department
+  const filteredGrades = (() => {
+    if (!formState.department) return grades;
+
+    const collegePrograms = [
+      "ABEL",
+      "BEED",
+      "BSA",
+      "BSBA",
+      "BSCE",
+      "BSED",
+      "BSHM",
+      "BSIT",
+      "BSTM"
+    ];
+
+    if (collegePrograms.includes(formState.department)) {
+      return grades.filter((g: any) =>
+        ["1st Year", "2nd Year", "3rd Year", "4th Year"].includes(
+          g.grade || g.grade_name || g.grade_level
+        )
+      );
+    }
+
+    if (formState.department === "SHS") {
+      return grades.filter((g: any) =>
+        ["Grade 11", "Grade 12"].includes(
+          g.grade || g.grade_name || g.grade_level
+        )
+      );
+    }
+
+    if (formState.department === "JHS") {
+      return grades.filter((g: any) =>
+        ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(
+          g.grade || g.grade_name || g.grade_level
+        )
+      );
+    }
+
+    return grades;
+  })();
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
@@ -82,57 +148,37 @@ export function StudentFormDialog({
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Barcode ID */}
+        {/* Barcode ID (Read-only when editing) */}
         <div className="space-y-2">
-          <Label htmlFor="barcodeId" className="font-bold text-black">
+          <Label htmlFor="barcode_id" className="font-bold text-black">
             Barcode ID
           </Label>
           <Input
-            id="barcodeId"
-            name="barcodeId"
-            value={formState.barcodeId}
+            id="barcode_id"
+            name="barcode_id"
+            value={formState.barcode_id}
             onChange={handleChange}
             required
-            className={outlineClass}
+            disabled={!!student} // <-- disable when editing
+            className={`${outlineClass} ${
+              student ? "bg-gray-200 cursor-not-allowed" : ""
+            }`}
           />
         </div>
 
         {/* Full Name */}
         <div className="space-y-2">
-          <Label htmlFor="name" className="font-bold text-black">
+          <Label htmlFor="student_name" className="font-bold text-black">
             Full Name
           </Label>
           <Input
-            id="name"
-            name="name"
-            value={formState.name}
+            id="student_name"
+            name="student_name"
+            value={formState.student_name}
             onChange={handleChange}
             required
             className={outlineClass}
           />
-        </div>
-
-        {/* Year Level */}
-        <div className="space-y-2">
-          <Label htmlFor="yearLevel" className="font-bold text-black">
-            Year Level
-          </Label>
-          <Select
-            value={formState.yearLevel}
-            onValueChange={(value) =>
-              setFormState({ ...formState, yearLevel: value })
-            }
-          >
-            <SelectTrigger className={outlineClass}>
-              <SelectValue placeholder="Select year level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1st Year">1st Year</SelectItem>
-              <SelectItem value="2nd Year">2nd Year</SelectItem>
-              <SelectItem value="3rd Year">3rd Year</SelectItem>
-              <SelectItem value="4th Year">4th Year</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Department */}
@@ -143,29 +189,59 @@ export function StudentFormDialog({
           <Select
             value={formState.department}
             onValueChange={(value) =>
-              setFormState({ ...formState, department: value })
+              setFormState({ ...formState, department: value, year_level: "" })
             }
           >
             <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select department" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ITS">ITS</SelectItem>
-              <SelectItem value="Teacher">Teacher</SelectItem>
+              {departments.map((d: any) => (
+                <SelectItem key={d.id} value={d.department}>
+                  {d.department}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Year Level */}
+        <div className="space-y-2">
+          <Label htmlFor="year_level" className="font-bold text-black">
+            Year Level
+          </Label>
+          <Select
+            value={formState.year_level}
+            onValueChange={(value) =>
+              setFormState({ ...formState, year_level: value })
+            }
+          >
+            <SelectTrigger className={outlineClass}>
+              <SelectValue placeholder="Select year level" />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredGrades.map((g: any) => (
+                <SelectItem
+                  key={g.id}
+                  value={g.grade || g.grade_name || g.grade_level}
+                >
+                  {g.grade || g.grade_name || g.grade_level}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         {/* Parent Email */}
         <div className="space-y-2">
-          <Label htmlFor="parentEmail" className="font-bold text-black">
+          <Label htmlFor="parent_email" className="font-bold text-black">
             Parent Email
           </Label>
           <Input
-            id="parentEmail"
-            name="parentEmail"
+            id="parent_email"
+            name="parent_email"
             type="email"
-            value={formState.parentEmail}
+            value={formState.parent_email}
             onChange={handleChange}
             required
             className={outlineClass}
@@ -173,7 +249,7 @@ export function StudentFormDialog({
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-end gap-3 mt-4">
+        <DialogFooter className="flex justify-end gap-3 mt-4">
           <Button
             type="button"
             variant="outline"
@@ -189,7 +265,7 @@ export function StudentFormDialog({
           >
             {student ? "Update" : "Add"}
           </Button>
-        </div>
+        </DialogFooter>
       </form>
     </DialogContent>
   );

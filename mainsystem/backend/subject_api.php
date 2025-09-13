@@ -4,7 +4,6 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Content-Type: application/json; charset=UTF-8");
 
-// ✅ Database connection
 $servername = "localhost";
 $username   = "root";
 $password   = "";
@@ -42,20 +41,20 @@ switch ($method) {
     $data = json_decode($raw, true);
 
     if (!$data) {
-      echo json_encode(["success" => false, "message" => "Invalid JSON", "raw" => $raw]);
+      echo json_encode(["success" => false, "message" => "Invalid JSON"]);
       exit;
     }
 
-    // Required fields check
-    if (empty($data["subject_code"]) || empty($data["subject_name"]) || empty($data["subject_time"]) || empty($data["department"]) || empty($data["instructor"])) {
+    // Required only code, name, department, instructor
+    if (empty($data["subject_code"]) || empty($data["subject_name"]) || empty($data["department"]) || empty($data["instructor"])) {
       echo json_encode(["success" => false, "message" => "Missing required fields"]);
       exit;
     }
 
-    // Optional fields (NULL if not provided)
-    $grade = $data["grade"] ?? null;
-    $strand = $data["strand"] ?? null;
-    $section = $data["section"] ?? null;
+    $subject_time = $data["subject_time"] ?? null;
+    $grade        = $data["grade"] ?? null;
+    $strand       = $data["strand"] ?? null;
+    $section      = $data["section"] ?? null;
 
     $stmt = $conn->prepare("
       INSERT INTO subjects (subject_code, subject_name, subject_time, department, grade, strand, section, instructor, created_at) 
@@ -71,7 +70,7 @@ switch ($method) {
       "ssssssss",
       $data["subject_code"],
       $data["subject_name"],
-      $data["subject_time"],
+      $subject_time,
       $data["department"],
       $grade,
       $strand,
@@ -82,7 +81,7 @@ switch ($method) {
     if ($stmt->execute()) {
       echo json_encode(["success" => true, "message" => "Subject added successfully"]);
     } else {
-      echo json_encode(["success" => false, "message" => "Insert failed: " . $stmt->error, "data" => $data]);
+      echo json_encode(["success" => false, "message" => "Insert failed: " . $stmt->error]);
     }
     $stmt->close();
     break;
@@ -97,9 +96,10 @@ switch ($method) {
       exit;
     }
 
-    $grade = $data["grade"] ?? null;
-    $strand = $data["strand"] ?? null;
-    $section = $data["section"] ?? null;
+    $subject_time = $data["subject_time"] ?? null;
+    $grade        = $data["grade"] ?? null;
+    $strand       = $data["strand"] ?? null;
+    $section      = $data["section"] ?? null;
 
     $stmt = $conn->prepare("
       UPDATE subjects 
@@ -115,7 +115,7 @@ switch ($method) {
     $stmt->bind_param(
       "ssssssss",
       $data["subject_name"],
-      $data["subject_time"],
+      $subject_time,
       $data["department"],
       $grade,
       $strand,
@@ -127,7 +127,7 @@ switch ($method) {
     if ($stmt->execute()) {
       echo json_encode(["success" => true, "message" => "Subject updated successfully"]);
     } else {
-      echo json_encode(["success" => false, "message" => "Update failed: " . $stmt->error, "data" => $data]);
+      echo json_encode(["success" => false, "message" => "Update failed: " . $stmt->error]);
     }
     $stmt->close();
     break;
@@ -156,7 +156,6 @@ switch ($method) {
     $stmt->close();
     break;
 
-  // 🔹 Invalid request
   default:
     echo json_encode(["success" => false, "message" => "Invalid request"]);
 }

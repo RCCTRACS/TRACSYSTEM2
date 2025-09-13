@@ -11,7 +11,7 @@ import {
   Upload,
   Edit,
   Trash2,
-  GraduationCap,
+  GraduationCap
 } from "lucide-react";
 
 import { StudentFormDialog } from "./StudentFormDialog";
@@ -21,12 +21,11 @@ import { BulkUploadStudent } from "./BulkUploadStudent";
 import { FilterStudentDialog } from "./FilterStudentDialog";
 
 export interface Student {
-  id: string;
-  barcodeId: string;
-  name: string;
-  yearLevel: string;
+  barcode_id: string;
+  student_name: string;
+  year_level: string;
   department: string;
-  parentEmail: string;
+  parent_email: string;
 }
 
 export function StudentManagement() {
@@ -45,48 +44,64 @@ export function StudentManagement() {
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
-  // Keep filtered in sync with students
+  const API_URL =
+    "http://192.168.1.13/capstone/mainsystem/backend/student_api.php";
+
+  // --- Fetch Students from backend ---
+  const fetchStudents = async () => {
+    try {
+      const res = await fetch(API_URL, { method: "GET" });
+      const result = await res.json();
+      setStudents(result.data || []);
+      setFilteredStudents(result.data || []);
+    } catch (err) {
+      console.error("Failed to fetch students", err);
+    }
+  };
+
   useEffect(() => {
-    setFilteredStudents(students);
-  }, [students]);
+    fetchStudents();
+  }, []);
 
   // --- Search filter ---
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    if (!term.trim()) {
-      setFilteredStudents(students);
-      return;
-    }
+    const lowerTerm = term.toLowerCase();
     const searchFiltered = students.filter(
       (s) =>
-        s.barcodeId.toLowerCase().includes(term.toLowerCase()) ||
-        s.name.toLowerCase().includes(term.toLowerCase()) ||
-        s.yearLevel.toLowerCase().includes(term.toLowerCase()) ||
-        s.department.toLowerCase().includes(term.toLowerCase()) ||
-        s.parentEmail.toLowerCase().includes(term.toLowerCase())
+        s.barcode_id.toLowerCase().includes(lowerTerm) ||
+        s.student_name.toLowerCase().includes(lowerTerm) ||
+        s.year_level.toLowerCase().includes(lowerTerm) ||
+        s.department.toLowerCase().includes(lowerTerm) ||
+        s.parent_email.toLowerCase().includes(lowerTerm)
     );
-    setFilteredStudents(searchFiltered);
+    setFilteredStudents(term.trim() ? searchFiltered : students);
   };
 
   // --- Add/Edit Student ---
-  const handleSaveStudent = (studentData: Partial<Student>) => {
-    if (selectedStudent) {
-      // Edit
-      const updated = students.map((s) =>
-        s.id === selectedStudent.id ? { ...s, ...studentData } : s
-      );
-      setStudents(updated);
-    } else {
-      // Add
-      const newStudent: Student = {
-        id: Date.now().toString(),
-        barcodeId: studentData.barcodeId || "",
-        name: studentData.name || "",
-        yearLevel: studentData.yearLevel || "",
-        department: studentData.department || "",
-        parentEmail: studentData.parentEmail || "",
-      };
-      setStudents((prev) => [...prev, newStudent]);
+  const handleSaveStudent = async (studentData: Partial<Student>) => {
+    try {
+      if (selectedStudent) {
+        // Edit
+        await fetch(API_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            barcode_id: selectedStudent.barcode_id,
+            ...studentData
+          })
+        });
+      } else {
+        // Add
+        await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(studentData)
+        });
+      }
+      fetchStudents();
+    } catch (err) {
+      console.error("Failed to save student", err);
     }
 
     setIsAddStudentOpen(false);
@@ -104,10 +119,18 @@ export function StudentManagement() {
     setIsDeleteStudentOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedStudent) {
-      const remaining = students.filter((s) => s.id !== selectedStudent.id);
-      setStudents(remaining);
+      try {
+        await fetch(API_URL, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ barcode_id: selectedStudent.barcode_id })
+        });
+        fetchStudents();
+      } catch (err) {
+        console.error("Failed to delete student", err);
+      }
       setIsDeleteStudentOpen(false);
       setSelectedStudent(null);
     }
@@ -116,7 +139,7 @@ export function StudentManagement() {
   // --- Download Template ---
   const handleDownloadTemplate = () => {
     const csvContent =
-      "id,barcodeId,name,yearLevel,department,parentEmail\n";
+      "barcode_id,student_name,year_level,department,parent_email\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -124,6 +147,19 @@ export function StudentManagement() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // --- Apply Department & Year Level Filter ---
+  const handleFilter = (
+    department: string | null,
+    yearLevel: string | null
+  ) => {
+    let filtered = [...students];
+    if (department)
+      filtered = filtered.filter((s) => s.department === department);
+    if (yearLevel)
+      filtered = filtered.filter((s) => s.year_level === yearLevel);
+    setFilteredStudents(filtered);
   };
 
   return (
@@ -194,9 +230,19 @@ export function StudentManagement() {
             </DialogTrigger>
             {isBulkUploadOpen && (
               <BulkUploadStudent
-                onUpload={(newStudents) => {
-                  const updated = [...students, ...newStudents];
-                  setStudents(updated);
+                onUpload={async (newStudents) => {
+                  try {
+                    for (const student of newStudents) {
+                      await fetch(API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(student)
+                      });
+                    }
+                    fetchStudents();
+                  } catch (err) {
+                    console.error("Failed bulk upload", err);
+                  }
                 }}
                 onClose={() => setIsBulkUploadOpen(false)}
               />
@@ -229,16 +275,7 @@ export function StudentManagement() {
             </DialogTrigger>
             {isFilterOpen && (
               <FilterStudentDialog
-                onFilter={(department) => {
-                  if (department === "All") {
-                    setFilteredStudents(students);
-                  } else {
-                    const filtered = students.filter(
-                      (s) => s.department === department
-                    );
-                    setFilteredStudents(filtered);
-                  }
-                }}
+                onFilter={handleFilter}
                 onClose={() => setIsFilterOpen(false)}
               />
             )}
@@ -269,14 +306,14 @@ export function StudentManagement() {
             ) : (
               filteredStudents.map((student) => (
                 <div
-                  key={student.id}
+                  key={student.barcode_id}
                   className="grid grid-cols-6 gap-x-4 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
-                  <div className="font-medium">{student.barcodeId}</div>
-                  <div>{student.name}</div>
-                  <div>{student.yearLevel}</div>
+                  <div className="font-medium">{student.barcode_id}</div>
+                  <div>{student.student_name}</div>
+                  <div>{student.year_level}</div>
                   <div>{student.department}</div>
-                  <div>{student.parentEmail}</div>
+                  <div>{student.parent_email}</div>
                   <div className="flex justify-center gap-2">
                     <Button
                       variant="ghost"
@@ -322,7 +359,7 @@ export function StudentManagement() {
           setSelectedStudent(null);
         }}
         onConfirm={handleConfirmDelete}
-        studentName={selectedStudent?.name || ""}
+        studentName={selectedStudent?.student_name || ""}
       />
     </div>
   );
