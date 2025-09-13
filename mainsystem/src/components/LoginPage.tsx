@@ -20,23 +20,30 @@ const LoginPage: React.FC = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password }),
         }
       );
 
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
 
-      const data: { success: boolean; message?: string; userId?: number } =
-        await res.json();
+      // Backend returns: success, userId, role, email, first_name, last_name, full_name
+      const data = await res.json();
 
       if (data.success) {
-        localStorage.setItem("authEmail", email);
+        // ✅ Store all useful info in localStorage
         localStorage.setItem("authUserId", data.userId?.toString() || "");
+        localStorage.setItem("authEmail", data.email || "");
+        localStorage.setItem("authName", data.full_name || "");
+        localStorage.setItem("authRole", data.role || "");
+
+        // ✅ Redirect after login
         navigate("/auth");
       } else {
-        // 🔑 clear old session if login fails (important after user is deleted)
-        localStorage.removeItem("authEmail");
+        // 🔑 Clear old session if login fails
         localStorage.removeItem("authUserId");
+        localStorage.removeItem("authEmail");
+        localStorage.removeItem("authName");
+        localStorage.removeItem("authRole");
         setErrorMsg(data.message || "Login failed.");
       }
     } catch (error) {

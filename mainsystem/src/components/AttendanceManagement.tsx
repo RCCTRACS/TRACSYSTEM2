@@ -10,7 +10,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Pencil, Download, Filter, Trash2, User } from "lucide-react";
@@ -44,7 +44,7 @@ export function AttendanceManagement() {
     department: "",
     timeIn: "",
     timeOut: "",
-    status: "",
+    status: ""
   });
 
   const outlineDarkBrownBtn =
@@ -73,7 +73,7 @@ export function AttendanceManagement() {
         department: a.department,
         timeIn: a.time_in,
         timeOut: a.time_out,
-        status: a.status,
+        status: a.status
       }));
       setAttendances(formatted);
     } catch (err) {
@@ -103,7 +103,7 @@ export function AttendanceManagement() {
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
+        body: formData.toString()
       });
 
       const text = await res.text();
@@ -131,7 +131,7 @@ export function AttendanceManagement() {
   const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`${API_URL}?id=${id}`, {
-        method: "DELETE",
+        method: "DELETE"
       });
 
       const text = await res.text();
@@ -163,11 +163,13 @@ export function AttendanceManagement() {
     const csvRows = attendances
       .map(
         (a) =>
-          `${a.id},${a.barcodeId},${a.studentName},${a.yearLevel},${a.department},${a.timeIn},${a.timeOut ?? "-"},${a.status}`
+          `${a.id},${a.barcodeId},${a.studentName},${a.yearLevel},${
+            a.department
+          },${a.timeIn},${a.timeOut ?? "-"},${a.status}`
       )
       .join("\n");
     const blob = new Blob([csvHeader + csvRows], {
-      type: "text/csv;charset=utf-8;",
+      type: "text/csv;charset=utf-8;"
     });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -185,7 +187,9 @@ export function AttendanceManagement() {
       (!filters.yearLevel ||
         a.yearLevel.toLowerCase().includes(filters.yearLevel.toLowerCase())) &&
       (!filters.department ||
-        a.department.toLowerCase().includes(filters.department.toLowerCase())) &&
+        a.department
+          .toLowerCase()
+          .includes(filters.department.toLowerCase())) &&
       (!filters.timeIn || a.timeIn >= filters.timeIn) &&
       (!filters.timeOut || (a.timeOut ?? "") <= filters.timeOut) &&
       (!filters.status || a.status === filters.status)
