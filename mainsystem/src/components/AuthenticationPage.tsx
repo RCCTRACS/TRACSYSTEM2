@@ -7,7 +7,7 @@ import React, {
 import { useNavigate } from "react-router-dom";
 import "./AuthenticationPage.css";
 
-// Import Sora font
+// Fonts
 import "@fontsource/sora/400.css";
 import "@fontsource/sora/600.css";
 import "@fontsource/sora/700.css";
@@ -22,9 +22,11 @@ const AuthenticationPage: React.FC = () => {
   );
   const navigate = useNavigate();
 
+  // Pull login info from localStorage
   const email = localStorage.getItem("authEmail") || "";
   const userId = localStorage.getItem("authUserId") || "";
 
+  // 🔹 Send OTP on component mount
   const sendOtp = async () => {
     try {
       const res = await fetch(
@@ -40,11 +42,11 @@ const AuthenticationPage: React.FC = () => {
       if (!data.success) {
         setErrorMsg(data.message || "Failed to send OTP.");
       } else {
-        setErrorMsg(""); // clear any previous error
+        setErrorMsg(""); // clear any old error
       }
     } catch (err) {
-      setErrorMsg("Failed to send OTP.");
       console.error("Send OTP error:", err);
+      setErrorMsg("Failed to send OTP.");
     }
   };
 
@@ -52,16 +54,23 @@ const AuthenticationPage: React.FC = () => {
     sendOtp();
   }, []);
 
+  // 🔹 Redirect after verification
   useEffect(() => {
     if (verified) {
-      // Wait 1 second to show green animation before navigating
       const timer = setTimeout(() => {
-        navigate("/dashboard");
+        const role = localStorage.getItem("userRole");
+
+        if (role && role.toLowerCase() === "teacher") {
+          navigate("/teacher-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       }, 1000);
       return () => clearTimeout(timer);
     }
   }, [verified, navigate]);
 
+  // 🔹 Handle OTP input change
   const handleChange = (value: string, index: number) => {
     if (/^[0-9]?$/.test(value)) {
       const newOtp = [...otpValues];
@@ -75,6 +84,7 @@ const AuthenticationPage: React.FC = () => {
     }
   };
 
+  // 🔹 Submit OTP
   const handleOtpSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg("");
@@ -95,16 +105,25 @@ const AuthenticationPage: React.FC = () => {
       const data = await res.json();
       if (data.success) {
         setOtpAnimation("success");
-        setVerified(true); // green stays until dashboard
+        setVerified(true);
+
+        // Save user info (role, name, etc.) for later use
+        if (data.user) {
+          localStorage.setItem("userRole", data.user.role || "");
+          localStorage.setItem("userFirstName", data.user.first_name || "");
+          localStorage.setItem("userLastName", data.user.last_name || "");
+          localStorage.setItem("userFullName", data.user.full_name || "");
+        }
       } else {
         setOtpAnimation("error");
         setErrorMsg(data.message || "Invalid OTP.");
         setTimeout(() => {
-          setOtpAnimation(null); // remove red after 2 seconds
+          setOtpAnimation(null);
           setErrorMsg("");
         }, 2000);
       }
-    } catch {
+    } catch (err) {
+      console.error("Verify OTP error:", err);
       setOtpAnimation("error");
       setErrorMsg("Verify OTP Error");
       setTimeout(() => {
@@ -116,6 +135,7 @@ const AuthenticationPage: React.FC = () => {
     }
   };
 
+  // 🔹 Backspace handler
   const handleOtpKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     index: number
