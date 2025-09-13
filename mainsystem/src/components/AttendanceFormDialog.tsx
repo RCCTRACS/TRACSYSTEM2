@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+"use client";
+
 import {
   Dialog,
   DialogContent,
@@ -7,92 +8,53 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
-interface Attendance {
-  id: number;
-  name: string;
-  date: string;
-  status: string;
-}
 
 interface AttendanceFormDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (attendance: Attendance) => void;
-  initialData?: Attendance | null;
+  onDelete?: () => void; // no need for id since you just want delete
 }
 
 export function AttendanceFormDialog({
   open,
   onClose,
-  onSave,
-  initialData,
+  onDelete,
 }: AttendanceFormDialogProps) {
-  const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [status, setStatus] = useState("");
-
-  useEffect(() => {
-    if (initialData) {
-      setName(initialData.name);
-      setDate(initialData.date);
-      setStatus(initialData.status);
-    } else {
-      setName("");
-      setDate("");
-      setStatus("");
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
+      onClose();
     }
-  }, [initialData]);
-
-  const handleSubmit = () => {
-    const newRecord: Attendance = {
-      id: initialData ? initialData.id : Date.now(),
-      name,
-      date,
-      status,
-    };
-    onSave(newRecord);
-    onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-sm bg-white rounded-2xl shadow-xl p-6">
         <DialogHeader>
-          <DialogTitle>
-            {initialData ? "Edit Attendance" : "Add Attendance"}
+          <DialogTitle className="text-lg font-bold text-red-600">
+            Confirm Deletion
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div>
-            <Label>Date</Label>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Status</Label>
-            <Input
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              placeholder="Present / Absent / Late"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+
+        <p className="text-sm text-gray-700 mt-2">
+          Are you sure you want to delete this attendance record? This action
+          cannot be undone.
+        </p>
+
+        <DialogFooter className="flex justify-end gap-3 mt-6">
+          <Button
+            variant="outline"
+            className="bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg px-6 hover:bg-gray-100"
+            onClick={onClose}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>
-            {initialData ? "Update" : "Save"}
+          <Button
+            variant="destructive"
+            className="bg-red-600 text-white font-semibold rounded-lg px-6 hover:bg-red-700"
+            onClick={handleDelete}
+          >
+            Delete
           </Button>
         </DialogFooter>
       </DialogContent>

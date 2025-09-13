@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,15 +10,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MobileTimePicker } from "@mui/x-date-pickers/MobileTimePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs, { Dayjs } from "dayjs";
 
 interface ManualAttendanceDialogProps {
   open: boolean;
   onClose: () => void;
-  onAdd: (barcode: string, time: string) => void;
+  // Parent will handle the POST request
+  onAdd: (barcode: string, time: string) => Promise<void> | void;
 }
 
 export function ManualAttendanceDialog({
@@ -25,31 +24,76 @@ export function ManualAttendanceDialog({
   onAdd,
 }: ManualAttendanceDialogProps) {
   const [barcode, setBarcode] = useState("");
-  const [time, setTime] = useState<Dayjs | null>(dayjs());
+  const [time, setTime] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleAdd = () => {
-    if (barcode && time) {
-      onAdd(barcode, time.format("HH:mm"));
+  // Reset fields whenever dialog closes
+  useEffect(() => {
+    if (!open) {
       setBarcode("");
-      setTime(dayjs());
+      setTime("");
+    }
+  }, [open]);
+
+  // Validate time in hh:mm AM/PM format
+  const isValidTime = (t: string) =>
+    /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?([AaPp][Mm])$/.test(t.trim());
+
+  // Convert hh:mm AM/PM → HH:MM:SS (24-hour)
+  const to24Hour = (t: string) => {
+    const match = t.trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+    if (!match) return t;
+
+    let [_, hh, mm, period] = match;
+    let hours = parseInt(hh, 10);
+    const minutes = mm;
+
+    if (period.toLowerCase() === "pm" && hours < 12) {
+      hours += 12;
+    }
+    if (period.toLowerCase() === "am" && hours === 12) {
+      hours = 0;
+    }
+
+    return `${hours.toString().padStart(2, "0")}:${minutes}:00`;
+  };
+
+  const handleAdd = async () => {
+    if (!barcode || !time) {
+      alert("Please enter both barcode and time.");
+      return;
+    }
+
+    if (!isValidTime(time)) {
+      alert("Please enter time in hh:mm AM/PM format.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const convertedTime = to24Hour(time); // ✅ convert before sending
+      await onAdd(barcode.trim(), convertedTime);
       onClose();
+    } catch (error: any) {
+      alert(error?.message || "Failed to add attendance.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-white rounded-2xl shadow-xl p-6">
-        {/* Header */}
         <DialogHeader>
           <DialogTitle className="text-lg font-bold text-black">
             Manual Attendance Input
           </DialogTitle>
         </DialogHeader>
 
-        {/* Content */}
-        <div className="flex gap-4 items-center mt-2">
+        <div className="flex flex-col gap-4 mt-2">
           {/* Barcode Input */}
-          <div className="flex-1">
+          <div>
             <label className="block text-sm font-medium text-black mb-1">
               Barcode ID
             </label>
@@ -61,49 +105,35 @@ export function ManualAttendanceDialog({
             />
           </div>
 
-          {/* Time Picker (Modal Style) */}
-          <div className="flex-1">
+          {/* Time Input */}
+          <div>
             <label className="block text-sm font-medium text-black mb-1">
-              Time In
+              Time In (hh:mm AM/PM)
             </label>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <MobileTimePicker
-                value={time}
-                onChange={(newValue) => setTime(newValue)}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    placeholder: "Pick a time",
-                    sx: {
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "0.5rem",
-                        "& fieldset": { borderColor: "brown" },
-                        "&:hover fieldset": { borderColor: "#5c2e1e" },
-                        "&.Mui-focused fieldset": { borderColor: "brown" },
-                      },
-                      input: { color: "black" },
-                    },
-                  },
-                }}
-              />
-            </LocalizationProvider>
+            <Input
+              placeholder="e.g., 08:30 AM"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="border border-gray-400 text-black rounded-lg"
+            />
           </div>
         </div>
 
-        {/* Footer Buttons */}
         <DialogFooter className="flex justify-end gap-3 mt-6">
           <Button
             onClick={onClose}
             variant="outline"
             className="bg-white border-2 border-[#8B4513] text-[#8B4513] font-semibold rounded-lg px-6 hover:bg-[#f9f4f1]"
+            disabled={loading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleAdd}
             className="bg-[#8B4513] text-white font-semibold rounded-lg px-6 hover:bg-[#5c2e1e]"
+            disabled={loading}
           >
-            Add
+            {loading ? "Adding..." : "Add"}
           </Button>
         </DialogFooter>
       </DialogContent>

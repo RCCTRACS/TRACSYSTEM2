@@ -1,30 +1,50 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Dashboard.css"; // make sure filename matches case
+import "./Dashboard.css";
 import "@fontsource/sora/400.css";
 import "@fontsource/sora/600.css";
 import "@fontsource/sora/700.css";
 
-interface ChartData {
-  grade: string;
-  percentage: number;
+const API_URL =
+  "http://192.168.0.137/capstone/mainsystem/backend/attendance_api.php";
+
+interface Attendance {
+  id: string;
+  barcode_id: string;
+  student_name: string;
+  year_level: string;
+  department: string;
+  time_in: string;
+  time_out: string | null;
+  status: string; // Present | Absent | Late
 }
 
+interface ChartData {
+  label: string;
+  count: number;
+}
+
+// ✅ Animated Counter
 const Counter: React.FC<{ target: number; className: string }> = ({
   target,
-  className,
+  className
 }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    let start = 0;
-    const duration = 800;
-    const stepTime = Math.max(Math.floor(duration / target), 10);
+    let current = 0;
+    const duration = 800; // total animation time
+    const stepTime = Math.max(Math.floor(duration / (target || 1)), 20);
 
     const timer = setInterval(() => {
-      start += 1;
-      setCount(start);
-      if (start === target) clearInterval(timer);
+      current += 1;
+      setCount((prev) => {
+        if (prev >= target) {
+          clearInterval(timer);
+          return target;
+        }
+        return prev + 1;
+      });
     }, stepTime);
 
     return () => clearInterval(timer);
@@ -34,19 +54,61 @@ const Counter: React.FC<{ target: number; className: string }> = ({
 };
 
 export const Dashboard: React.FC = () => {
-  const data: ChartData[] = [
-    { grade: "G7", percentage: 100 },
-    { grade: "G8", percentage: 84 },
-    { grade: "G9", percentage: 93 },
-    { grade: "G10", percentage: 76 },
-    { grade: "G11", percentage: 35 },
-  ];
-
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [stats, setStats] = useState({ present: 0, late: 0, absent: 0 });
+  const [chartData, setChartData] = useState<ChartData[]>([]);
   const [animate, setAnimate] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dateTime, setDateTime] = useState<string>("");
 
   const navigate = useNavigate();
+
+  // ✅ Fetch attendance data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+
+        if (!Array.isArray(data)) return;
+
+        setAttendances(data);
+
+        // --- Compute Stats ---
+        const present = data.filter((a) => a.status === "Present").length;
+        const late = data.filter((a) => a.status === "Late").length;
+        const absent = data.filter((a) => a.status === "Absent").length;
+
+        setStats({ present, late, absent });
+
+        // --- Compute Department/Grade Breakdown ---
+        const grouped: Record<string, number> = {};
+        data.forEach((a) => {
+          let dept = a.department.trim().toUpperCase();
+          let key = dept;
+
+          if (dept === "JHS") {
+            key = a.year_level.trim(); // Grade 7–10
+          } else if (dept === "SHS") {
+            key = a.year_level.trim(); // Grade 11–12
+          }
+
+          grouped[key] = (grouped[key] || 0) + 1;
+        });
+
+        // --- Convert to chart data & sort highest → lowest ---
+        const chartArr = Object.entries(grouped)
+          .map(([label, count]) => ({ label, count }))
+          .sort((a, b) => b.count - a.count);
+
+        setChartData(chartArr);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimate(true), 100);
@@ -61,16 +123,15 @@ export const Dashboard: React.FC = () => {
         weekday: "long",
         year: "numeric",
         month: "long",
-        day: "numeric",
+        day: "numeric"
       };
       const dateStr = now.toLocaleDateString("en-US", options);
-      const timeStr = now.toLocaleTimeString("en-US", { hour12: true }); // ✅ AM/PM
-
+      const timeStr = now.toLocaleTimeString("en-US", { hour12: true });
       setDateTime(`${dateStr} | ${timeStr}`);
     };
 
-    updateDateTime(); // run immediately
-    const interval = setInterval(updateDateTime, 1000); // update every second
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -96,7 +157,11 @@ export const Dashboard: React.FC = () => {
           {/* Profile chip with dropdown */}
           <div className="profile-chip-container">
             <div className="profile-chip" onClick={toggleDropdown}>
-              <img src="/user.png" alt="Profile" className="profile-chip-icon" />
+              <img
+                src="/user.png"
+                alt="Profile"
+                className="profile-chip-icon"
+              />
               <span className="profile-chip-name">Gerwin</span>
               <span className="dropdown-arrow">▼</span>
             </div>
@@ -118,15 +183,15 @@ export const Dashboard: React.FC = () => {
           <div className="stats">
             <div className="card">
               <p className="label">PRESENT</p>
-              <Counter target={146} className="green" />
+              <Counter target={stats.present} className="green" />
             </div>
             <div className="card">
               <p className="label">LATE</p>
-              <Counter target={50} className="yellow" />
+              <Counter target={stats.late} className="yellow" />
             </div>
             <div className="card">
               <p className="label">ABSENT</p>
-              <Counter target={160} className="red" />
+              <Counter target={stats.absent} className="red" />
             </div>
           </div>
 
@@ -136,24 +201,26 @@ export const Dashboard: React.FC = () => {
               style={{
                 fontSize: "22px",
                 fontWeight: "700",
-                marginBottom: "15px",
+                marginBottom: "15px"
               }}
             >
               Total Attendance: {dateTime}
             </h3>
-            {data.map((item) => (
-              <div key={item.grade} className="bar-row">
-                <span className="bar-label">{item.grade}</span>
+            {chartData.map((item) => (
+              <div key={item.label} className="bar-row">
+                <span className="bar-label">{item.label}</span>
                 <div className="bar-track">
                   <div
                     className="bar-fill"
                     style={{
-                      width: animate ? `${item.percentage}%` : "0%",
-                      transition: "width 0.8s ease-in-out",
+                      width: animate
+                        ? `${(item.count / (attendances.length || 1)) * 100}%`
+                        : "0%",
+                      transition: "width 0.8s ease-in-out"
                     }}
                   />
                 </div>
-                <span className="bar-value">{item.percentage}%</span>
+                <span className="bar-value">{item.count}</span>
               </div>
             ))}
           </div>
@@ -164,4 +231,3 @@ export const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-  
