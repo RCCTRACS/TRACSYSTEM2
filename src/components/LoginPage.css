@@ -83,67 +83,31 @@
 /* Login form card */
 .form-card {
   background: #fff;
-  padding: 2.5rem 2rem;
-  border-radius: 1.5rem;
+  padding: 2rem;
+  border-radius: 1rem;
   border: 2px solid #503418;
-  box-shadow: 8px 8px 0 #503418;
-  width: 95%;
-  max-width: 420px;
-  text-align: left;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem; /* add gap between children */
+  box-shadow: 6px 6px 0 #503418;
+  width: 90%;
+  max-width: 400px;
+  text-align: left; /* left-align text by default */
 }
 
 /* Headings and description left-aligned */
-.form-card h2 {
-  text-align: left;
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  color: #503418;
-  letter-spacing: 1px;
-}
-
-.form-card p {
-  text-align: left;
-  margin-bottom: 0.5rem;
-  color: #7a5230;
-  font-size: 1.05rem;
-}
-
+.form-card h2,
+.form-card p,
 .form-card label {
   text-align: left;
   display: block;
   width: 100%;
-  margin-bottom: 0.3rem;
-  color: #503418;
-  font-weight: 500;
-  font-size: 1rem;
-}
-
-/* Add spacing between form fields */
-.form-card .form-group {
-  margin-bottom: 1.2rem;
 }
 
 .form-card input {
   width: 100%;
-  padding: 0.7rem 1rem;
-  margin-top: 0.2rem;
+  padding: 0.6rem;
+  margin-top: 0.3rem;
   border: 2px solid #503418;
   border-radius: 1rem;
-  font-size: 1.05rem;
-  background: #fff; /* white background for input */
-  margin-bottom: 0.7rem;
-  transition: border 0.2s, background 0.2s;
-}
-
-.form-card input:focus {
-  border-color: #7a5230;
-  outline: none;
-  background: #f8edc6; /* light cream brown when focused */
+  font-size: 1rem;
 }
 
 /* Center the buttons */
@@ -151,63 +115,29 @@
 .form-card .create-btn {
   width: 100%;
   max-width: 340px;
-  margin: 1.5rem auto 0 auto;
+  margin: 1.5rem auto 0 auto; /* center horizontally */
   display: block;
-  padding: 0.85rem;
-  background: #503418; /* solid brown */
+  padding: 0.75rem;
+  background: #503418;
   color: #fff;
-  font-size: 1.08rem;
+  font-size: 1rem;
   font-weight: bold;
   border: none;
   border-radius: 2rem;
   cursor: pointer;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(80, 52, 24, 0.08);
-  letter-spacing: 0.5px;
-  transition: background 0.2s;
-}
-
-.form-card button:hover,
-.form-card .create-btn:hover {
-  background: #7a5230; /* darker brown on hover */
 }
 
 /* Center the "Don't have an account?" text */
 .form-card .account-text {
   text-align: center;
-  margin: 1.2rem 0 0 0;
-  color: #7a5230;
-  font-size: 1rem;
+  margin: 1rem 0 0 0;
 }
 
 /* Error message left-aligned */
 .error-msg {
-  color: #d32f2f;
+  color: red;
   font-weight: bold;
   margin-top: 10px;
   text-align: left;
-  font-size: 1rem;
-  letter-spacing: 0.5px;
-}
-
-/* Responsive adjustments */
-@media (max-width: 900px) {
-  .login-container {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-  }
-  .left-side,
-  .right-side {
-    flex: none;
-    width: 100%;
-    min-height: 300px;
-  }
-  .form-card {
-    max-width: 98vw;
-    padding: 2rem 1rem;
-  }
-  .logo-wrapper {
-    padding: 2rem 1rem;
-  }
 }
