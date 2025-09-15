@@ -1,0 +1,218 @@
+/* Import Sora font */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+
+/* Overall container */
+.login-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Sora', sans-serif;
+}
+
+/* Left section (Logo + Background) */
+.left-side {
+  flex: 1 1 50%;
+  background: url('/background.jpg') center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2vw;
+}
+
+.logo-wrapper img {
+  max-width: 60vw;
+  width: 100%;
+  height: auto;
+}
+
+/* Right section (Form) */
+.right-side {
+  flex: 1 1 50%;
+  background-color: #f9eacb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2vw;
+}
+
+/* Card container */
+.form-card {
+  background-color: white;
+  border: 2px solid #5b3a1a;
+  border-radius: 1rem;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 420px;
+  min-width: 260px;
+  text-align: center;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* Headings */
+.form-card h2 {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.form-card p {
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+/* OTP boxes container */
+.otp-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+/* OTP single box */
+.otp-box {
+  width: 2.4rem;
+  height: 5rem;
+  border: 3px solid #5b3a1a;
+  border-radius: 6px;
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  box-sizing: border-box;
+  background: transparent;
+  transition: border-color 0.2s;
+}
+
+.otp-box:focus {
+  border-color: #4a2e15;
+  outline: none;
+}
+
+/* Increase font size when OTP box is not empty */
+.otp-box:not(:placeholder-shown) {
+  font-size: 2.7rem;
+  transition: font-size 0.15s;
+}
+
+/* Verified text */
+.verified-text {
+  color: #2ecc40;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Button */
+.continue-btn {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: clamp(1rem, 1.3vw, 1.1rem);
+  font-weight: bold;
+  border-radius: 20px;
+  background-color: #5b3a1a;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.continue-btn:hover {
+  background-color: #4a2e15;
+}
+
+/* Error message */
+.error-msg {
+  color: #ff4136;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Success animation */
+.otp-box.success {
+  border-color: #2ecc40;
+  background-color: #eaffea;
+  animation: otpSuccess 1s forwards;
+}
+
+@keyframes otpSuccess {
+  0% { box-shadow: 0 0 0 #2ecc40; }
+  60% { box-shadow: 0 0 12px #2ecc40; }
+  100% { box-shadow: 0 0 0 #2ecc40; }
+}
+
+/* Error animation */
+.otp-box.error {
+  border-color: #ff4136;
+  background-color: #ffeaea;
+  animation: otpError 1s forwards;
+}
+
+@keyframes otpError {
+  0% { box-shadow: 0 0 0 #ff4136; }
+  60% { box-shadow: 0 0 12px #ff4136; }
+  100% { box-shadow: 0 0 0 #ff4136; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .login-container {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .left-side, .right-side {
+    flex: 1 1 100%;
+    padding: 2vw;
+    min-height: 40vh;
+  }
+
+  .logo-wrapper img {
+    max-width: 60vw;
+  }
+
+  .form-card {
+    max-width: 90vw;
+    min-width: 220px;
+    padding: 2rem 1rem;
+  }
+
+  .otp-box {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-card {
+    padding: 1.2rem 0.5rem;
+    max-width: 98vw;
+    min-width: 0;
+  }
+
+  .otp-box {
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 1rem;
+  }
+
+  .logo-wrapper img {
+    max-width: 80vw;
+  }
+}
+
+@media (max-width: 400px) {
+  .form-card {
+    padding: 0.7rem 0.2rem;
+  }
+  .otp-box {
+    width: 1.2rem;
+    height: 1.2rem;
+    font-size: 0.9rem;
+  }
+}
