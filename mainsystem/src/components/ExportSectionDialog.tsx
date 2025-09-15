@@ -39,7 +39,8 @@ export function ExportSectionDialog({ sections, onClose }: ExportSectionDialogPr
       <div className="mt-6 flex flex-col space-y-8">
         {/* Confirmation Message */}
         <p className="text-sm text-black font-medium text-center">
-          Are you sure you want to export section data?
+          Are you sure you want to export{" "}
+          <span className="font-semibold">{sections.length}</span> sections?
         </p>
 
         {/* Footer Buttons */}

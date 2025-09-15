@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 
 interface Student {
@@ -35,14 +35,14 @@ interface StudentFormDialogProps {
 export function StudentFormDialog({
   student,
   onSave,
-  onClose
+  onClose,
 }: StudentFormDialogProps) {
   const [formState, setFormState] = useState<Student>({
     barcode_id: "",
     student_name: "",
     year_level: "",
     department: "",
-    parent_email: ""
+    parent_email: "",
   });
 
   const [departments, setDepartments] = useState<any[]>([]);
@@ -50,14 +50,14 @@ export function StudentFormDialog({
 
   useEffect(() => {
     if (student) {
-      setFormState(student);
+      setFormState(student); // preload existing data (edit mode)
     } else {
       setFormState({
         barcode_id: "",
         student_name: "",
         year_level: "",
         department: "",
-        parent_email: ""
+        parent_email: "",
       });
     }
   }, [student]);
@@ -94,7 +94,7 @@ export function StudentFormDialog({
       "BSED",
       "BSHM",
       "BSIT",
-      "BSTM"
+      "BSTM",
     ];
 
     if (collegePrograms.includes(formState.department)) {
@@ -114,11 +114,16 @@ export function StudentFormDialog({
     }
 
     if (formState.department === "JHS") {
-      return grades.filter((g: any) =>
-        ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(
-          g.grade || g.grade_name || g.grade_level
+      // Correct ordering for JHS
+      const order = ["Grade 7", "Grade 8", "Grade 9", "Grade 10"];
+      return order
+        .map((grade) =>
+          grades.find(
+            (g: any) =>
+              (g.grade || g.grade_name || g.grade_level) === grade
+          )
         )
-      );
+        .filter(Boolean);
     }
 
     return grades;
@@ -132,7 +137,7 @@ export function StudentFormDialog({
   };
 
   const outlineClass =
-    "border-[3px] border-[#3E1F0F] rounded-lg focus:border-[#3E1F0F] focus:ring-1 focus:ring-[#3E1F0F] h-12 px-3";
+    "border-[2.5px] border-[#3E1F0F] rounded-xl focus:border-[#3E1F0F] focus:ring-2 focus:ring-[#C9A27E] h-12 px-4 shadow-sm transition-all duration-200";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,17 +145,20 @@ export function StudentFormDialog({
   };
 
   return (
-    <DialogContent className="sm:max-w-[600px] bg-popover p-6">
-      <DialogHeader className="px-0">
-        <DialogTitle className="text-xl font-bold text-black">
+    <DialogContent
+      className="sm:max-w-[750px] bg-white 
+      p-10 rounded-3xl shadow-2xl border border-[#D9B99B] max-h-[90vh] overflow-y-auto my-6"
+    >
+      <DialogHeader className="px-0 pb-6 border-b border-[#E5D3C6]">
+        <DialogTitle className="text-2xl font-extrabold text-[#3E1F0F] tracking-wide">
           {student ? "Edit Student" : "Add Student"}
         </DialogTitle>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-8 py-6">
         {/* Barcode ID (Read-only when editing) */}
-        <div className="space-y-2">
-          <Label htmlFor="barcode_id" className="font-bold text-black">
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
             Barcode ID
           </Label>
           <Input
@@ -159,7 +167,7 @@ export function StudentFormDialog({
             value={formState.barcode_id}
             onChange={handleChange}
             required
-            disabled={!!student} // <-- disable when editing
+            disabled={!!student}
             className={`${outlineClass} ${
               student ? "bg-gray-200 cursor-not-allowed" : ""
             }`}
@@ -167,8 +175,8 @@ export function StudentFormDialog({
         </div>
 
         {/* Full Name */}
-        <div className="space-y-2">
-          <Label htmlFor="student_name" className="font-bold text-black">
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
             Full Name
           </Label>
           <Input
@@ -182,15 +190,21 @@ export function StudentFormDialog({
         </div>
 
         {/* Department */}
-        <div className="space-y-2">
-          <Label htmlFor="department" className="font-bold text-black">
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
             Department
           </Label>
           <Select
             value={formState.department}
-            onValueChange={(value) =>
-              setFormState({ ...formState, department: value, year_level: "" })
-            }
+            onValueChange={(value) => {
+              // Only reset year_level if department actually changes
+              setFormState((prev) => ({
+                ...prev,
+                department: value,
+                year_level:
+                  prev.department === value ? prev.year_level : "",
+              }));
+            }}
           >
             <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select department" />
@@ -206,8 +220,8 @@ export function StudentFormDialog({
         </div>
 
         {/* Year Level */}
-        <div className="space-y-2">
-          <Label htmlFor="year_level" className="font-bold text-black">
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
             Year Level
           </Label>
           <Select
@@ -232,9 +246,9 @@ export function StudentFormDialog({
           </Select>
         </div>
 
-        {/* Parent Email */}
-        <div className="space-y-2">
-          <Label htmlFor="parent_email" className="font-bold text-black">
+        {/* Parent Email - Full Width */}
+        <div className="flex flex-col gap-2 col-span-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
             Parent Email
           </Label>
           <Input
@@ -248,22 +262,32 @@ export function StudentFormDialog({
           />
         </div>
 
-        {/* Buttons */}
-        <DialogFooter className="flex justify-end gap-3 mt-4">
+        {/* Buttons - Full Width */}
+        <DialogFooter className="col-span-2 mt-8 flex justify-end gap-4 border-t border-[#E5D3C6] pt-6">
           <Button
             type="button"
             variant="outline"
-            className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200"
-            onClick={onClose}
+            className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white 
+            hover:bg-[#5C3A21] hover:text-white rounded-xl px-6 py-2 font-semibold transition-all duration-200 shadow-sm"
+            onClick={() => {
+              setFormState({
+                barcode_id: "",
+                student_name: "",
+                year_level: "",
+                department: "",
+                parent_email: "",
+              });
+              onClose();
+            }}
           >
             Cancel
           </Button>
-
           <Button
             type="submit"
-            className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200"
+            className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] 
+            rounded-xl px-6 py-2 font-semibold transition-all duration-200 shadow-md"
           >
-            {student ? "Update" : "Add"}
+            {student ? "Save Changes" : "Add Student"}
           </Button>
         </DialogFooter>
       </form>

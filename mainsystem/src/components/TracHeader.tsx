@@ -1,16 +1,8 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChevronDown, User, LogOut, Pencil } from "lucide-react";
+"use client";
+
 import { useState, ChangeEvent, FormEvent } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { UserFormDialog } from "./UserFormDialog"; // make sure this path is correct
 
 interface Teacher {
   name: string;
@@ -22,7 +14,8 @@ interface TracHeaderProps {
 }
 
 const TracHeader = ({ teacher }: TracHeaderProps) => {
-  const [openEdit, setOpenEdit] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: teacher?.name || "",
     email: teacher?.email || "",
@@ -37,9 +30,8 @@ const TracHeader = ({ teacher }: TracHeaderProps) => {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: handle form submission, e.g., call API to update user
     console.log("Updated user data:", formData);
-    setOpenEdit(false);
+    setIsProfileOpen(false);
   };
 
   return (
@@ -51,123 +43,52 @@ const TracHeader = ({ teacher }: TracHeaderProps) => {
         )}
       </div>
 
-      <div className="flex items-center space-x-4">
-        {/* Dropdown Menu for Profile */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <div className="flex items-center space-x-2 bg-white border-4 border-primary px-4 py-2 rounded-full cursor-pointer hover:bg-gray-50 transition">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-blue-400 text-white text-sm">
-                  {teacher?.name ? teacher.name.charAt(0) : "U"}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium">{teacher?.name || "User"}</span>
-              <ChevronDown size={16} />
+      <div className="relative">
+        {/* Profile dropdown */}
+        <div
+          className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
+          onClick={() => setDropdownOpen((prev) => !prev)}
+        >
+          <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
+          <span className="text-black text-sm font-medium">
+            {teacher ? teacher.name : "User"}
+          </span>
+          <span className="ml-2 text-xs">▼</span>
+        </div>
+
+        {dropdownOpen && (
+          <div className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10">
+            <div
+              className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+              onClick={() => {
+                setIsProfileOpen(true);
+                setDropdownOpen(false);
+              }}
+            >
+              Edit Profile
             </div>
-          </DropdownMenuTrigger>
+            <div
+              className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+              onClick={() => {
+                localStorage.clear();
+                sessionStorage.removeItem("sidebarHasAnimated");
+                setDropdownOpen(false);
+                window.location.href = "/";
+              }}
+            >
+              Logout
+            </div>
+          </div>
+        )}
 
-          <DropdownMenuContent className="w-48 mt-2">
-            {/* Profile Submenu */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <span className="flex items-center w-full">
-                  <User className="w-4 h-4 mr-2" />
-                  <span className="flex-grow">Profile</span>
-                </span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => setOpenEdit(true)}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Edit User
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            {/* Logout */}
-            <DropdownMenuItem>
-              <LogOut className="w-4 h-4 mr-2" />
-              Log Out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Modal for Edit User */}
-        <Dialog open={openEdit} onOpenChange={setOpenEdit}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-            </DialogHeader>
-            <form className="space-y-4 mt-4" onSubmit={handleSubmit}>
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                />
-              </div>
-
-              {/* Department */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Department</label>
-                <input
-                  type="text"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                />
-              </div>
-
-              {/* Access */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Access</label>
-                <input
-                  type="text"
-                  name="access"
-                  value={formData.access}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90"
-              >
-                Save Changes
-              </button>
-            </form>
-          </DialogContent>
+        {/* Edit Profile Modal */}
+        <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+          <UserFormDialog
+            user={teacher as any}
+            onSave={() => setIsProfileOpen(false)}
+            onClose={() => setIsProfileOpen(false)}
+            isProfile
+          />
         </Dialog>
       </div>
     </header>

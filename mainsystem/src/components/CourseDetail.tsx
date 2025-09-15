@@ -1,22 +1,12 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Download, Filter } from "lucide-react";
+import { FilterAttendanceDialog } from "./FilterAttendanceDialog";
 
 interface Student {
   barcode_id: string;
@@ -34,58 +24,35 @@ interface CourseDetailProps {
   courseCode: string;
   courseTitle: string;
   department: string;
+  courseTime: string;
   grade?: string;
-  onExit: () => void;
 }
 
-const CourseDetail = ({
-  courseCode,
-  courseTitle,
-  department,
-  grade,
-  onExit,
-}: CourseDetailProps) => {
+const CourseDetail = ({ courseCode, courseTitle, department, courseTime, grade }: CourseDetailProps) => {
   const [students, setStudents] = useState<Student[]>([]);
-  const [barcodeInput, setBarcodeInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({ status: "" });
 
-  // ✅ Fetch students filtered by Department + Grade only
+  // Fetch students
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
         const res = await fetch(
           "http://192.168.1.13/capstone/mainsystem/backend/student_api.php",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+          { method: "GET", headers: { "Content-Type": "application/json" } }
         );
-
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const data = await res.json();
-
         if (data.success && Array.isArray(data.data)) {
-          const filtered = data.data.filter((s: any) => {
-            return (
-              s.department === department &&
-              (!grade || s.year_level === grade)
-            );
-          });
-
-          const withStatus = filtered.map((s: any) => ({
-            ...s,
-            status: "Absent" as "Present" | "Late" | "Absent",
-          }));
-
-          setStudents(withStatus);
-        } else {
-          console.error("❌ API returned error:", data.message);
+          const filtered = data.data.filter(
+            (s: any) =>
+              s.department === department && (!grade || s.year_level === grade)
+          );
+          setStudents(
+            filtered.map((s: any) => ({ ...s, status: "Absent" as "Present" | "Late" | "Absent" }))
+          );
         }
       } catch (err) {
         console.error("⚠️ Error fetching students:", err);
@@ -93,99 +60,113 @@ const CourseDetail = ({
         setLoading(false);
       }
     };
-
     fetchStudents();
   }, [department, grade]);
 
-  // ✅ Barcode scan/input
-  const handleBarcodeSubmit = () => {
-    if (!barcodeInput.trim()) return;
-
-    const found = students.find((s) => s.barcode_id === barcodeInput.trim());
-
-    if (found) {
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.barcode_id === found.barcode_id ? { ...s, status: "Present" } : s
-        )
-      );
-    } else {
-      alert("❌ Student not found in this subject!");
-    }
-
-    setBarcodeInput("");
-  };
-
-  // ✅ Manual status change
-  const handleStatusChange = (
-    barcode_id: string,
-    newStatus: "Present" | "Late" | "Absent"
-  ) => {
+  const handleStatusChange = (barcode_id: string, newStatus: "Present" | "Late" | "Absent") => {
     setStudents((prev) =>
-      prev.map((s) =>
-        s.barcode_id === barcode_id ? { ...s, status: newStatus } : s
-      )
+      prev.map((s) => (s.barcode_id === barcode_id ? { ...s, status: newStatus } : s))
     );
   };
 
+  // Export CSV
+  const handleExport = () => {
+    const csvHeader = "Barcode ID,Name,Year Level,Department,Status\n";
+    const csvRows = students
+      .map(
+        (s) =>
+          `${s.barcode_id},${s.student_name},${s.year_level},${s.department},${s.status}`
+      )
+      .join("\n");
+    const blob = new Blob([csvHeader + csvRows], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "course_students.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Filtered students
+  const filteredStudents = students.filter((s) =>
+    !filters.status || s.status === filters.status
+  );
+
+  const outlineDarkBrownBtn =
+    "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
+
   return (
-    <div className="p-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-black">{courseCode}</h2>
-          <p className="text-lg text-black">{courseTitle}</p>
-          <p className="text-sm text-gray-600">1:00–3:00 PM</p>
-        </div>
-        <Button onClick={onExit} variant="destructive">
-          Exit
+      <div>
+        <h2 className="text-2xl font-bold text-black">{courseCode}</h2>
+        <p className="text-lg text-black">{courseTitle}</p>
+        <p className="text-sm text-gray-600">{courseTime}</p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end items-center gap-2">
+        <Button className={outlineDarkBrownBtn} onClick={handleExport}>
+          <Download className="h-4 w-4 mr-2" />
+          Export
         </Button>
+
+        <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <DialogTrigger asChild>
+            <Button className={outlineDarkBrownBtn}>
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
+          </DialogTrigger>
+          {isFilterOpen && (
+            <FilterAttendanceDialog
+              open={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              onFilter={(status) => {
+                setFilters({ status: status === "All" ? "" : status });
+                setIsFilterOpen(false);
+              }}
+            />
+          )}
+        </Dialog>
       </div>
 
-      {/* Barcode Input */}
-      <div className="mb-4 flex gap-2">
-        <Input
-          placeholder="Scan or enter student barcode"
-          value={barcodeInput}
-          onChange={(e) => setBarcodeInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleBarcodeSubmit()}
-        />
-        <Button onClick={handleBarcodeSubmit}>Add</Button>
-      </div>
-
-      {/* Class List */}
-      <Card>
+      {/* Student List */}
+      <Card className="border-2 border-[#5C4033] rounded-lg shadow-sm">
         <CardHeader>
           <CardTitle>Class List</CardTitle>
+          <p className="text-sm text-gray-500 mt-1">{courseTime}</p>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-gray-500 text-center py-6">Loading students...</p>
-          ) : students.length === 0 ? (
-            <p className="text-gray-500 text-center py-6">
+            <p className="text-center text-gray-500 py-6">Loading students...</p>
+          ) : filteredStudents.length === 0 ? (
+            <p className="text-center text-gray-500 py-6">
               No students found for this subject.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Barcode ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Year Level</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {students.map((student) => (
-                  <TableRow key={student.barcode_id}>
-                    <TableCell className="font-medium">
-                      {student.barcode_id}
-                    </TableCell>
-                    <TableCell>{student.student_name}</TableCell>
-                    <TableCell>{student.year_level}</TableCell>
-                    <TableCell>{student.department}</TableCell>
-                    <TableCell>
+            <div className="mt-2">
+              {/* Header Row - simple labels with bottom border */}
+              <div className="grid grid-cols-5 gap-x-4 text-center font-semibold border-b border-gray-400 px-4 py-2">
+                <div>Barcode ID</div>
+                <div>Name</div>
+                <div>Year Level</div>
+                <div>Department</div>
+                <div>Status</div>
+              </div>
+
+              {/* Student Rows */}
+              <div className="space-y-3 mt-1">
+                {filteredStudents.map((student) => (
+                  <div
+                    key={student.barcode_id}
+                    className="grid grid-cols-5 gap-x-4 items-center text-center bg-gray-100 hover:bg-gray-200 px-4 py-3 rounded-xl"
+                  >
+                    <div>{student.barcode_id}</div>
+                    <div>{student.student_name}</div>
+                    <div>{student.year_level}</div>
+                    <div>{student.department}</div>
+                    <div>
                       <Select
                         value={student.status}
                         onValueChange={(value) =>
@@ -204,11 +185,11 @@ const CourseDetail = ({
                           <SelectItem value="Absent">Absent</SelectItem>
                         </SelectContent>
                       </Select>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

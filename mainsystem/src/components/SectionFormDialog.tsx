@@ -1,8 +1,15 @@
+"use client";
+
 import { useState, useEffect } from "react";
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Section {
   id: string;
@@ -16,86 +23,103 @@ interface SectionFormDialogProps {
   onClose: () => void;
 }
 
-export function SectionFormDialog({ section, onSave, onClose }: SectionFormDialogProps) {
-  const [formData, setFormData] = useState({
-    section: "",
-    type: "",
-  });
+export function SectionFormDialog({
+  section,
+  onSave,
+  onClose,
+}: SectionFormDialogProps) {
+  const [sectionName, setSectionName] = useState("");
+  const [type, setType] = useState("");
 
   useEffect(() => {
     if (section) {
-      setFormData({
-        section: section.section,
-        type: section.type,
-      });
+      setSectionName(section.section);
+      setType(section.type);
     } else {
-      setFormData({
-        section: "",
-        type: "",
-      });
+      setSectionName("");
+      setType("");
     }
   }, [section]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
+  const handleSubmit = () => {
+    if (!sectionName || !type) return;
+    onSave({ section: sectionName, type });
+
+    if (!section) {
+      setSectionName("");
+      setType("");
+    }
   };
 
   const outlineClass =
-    "border-[3px] border-[#3E1F0F] rounded-lg focus:border-[#3E1F0F] focus:ring-1 focus:ring-[#3E1F0F] h-12 px-3";
+    "border-[2.5px] border-[#3E1F0F] rounded-xl focus:border-[#3E1F0F] focus:ring-2 focus:ring-[#C9A27E] h-12 px-4 shadow-sm transition-all duration-200";
 
   return (
-    <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-[#fdfaf6] to-[#fff7f0] p-6 rounded-3xl shadow-2xl border border-[#D9B99B]">
-      <DialogHeader className="px-0">
-        <DialogTitle className="text-xl font-bold text-black">
+    <DialogContent
+      className="sm:max-w-[600px] bg-white 
+      p-8 rounded-3xl shadow-2xl border border-[#D9B99B] max-h-[85vh] overflow-y-auto my-6"
+    >
+      <DialogHeader className="px-0 pb-6 border-b border-[#E5D3C6]">
+        <DialogTitle className="text-2xl font-extrabold text-[#3E1F0F] tracking-wide">
           {section ? "Edit Section" : "Add Section"}
         </DialogTitle>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Section Name */}
-        <div className="space-y-2">
-          <Label htmlFor="section" className="font-bold text-black">Section</Label>
-          <Input
-            id="section"
-            value={formData.section}
-            onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-            required
-            className={outlineClass}
-          />
-        </div>
+      <div className="flex flex-col gap-6 py-6">
+        {/* Side-by-side inputs */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Section Name */}
+          <div className="flex-1 flex flex-col gap-2">
+            <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+              Section Name
+            </Label>
+            <Input
+              placeholder="Enter section name"
+              value={sectionName}
+              onChange={(e) => setSectionName(e.target.value)}
+              className={outlineClass}
+            />
+          </div>
 
-        {/* Type as Textbox */}
-        <div className="space-y-2">
-          <Label htmlFor="type" className="font-bold text-black">Type</Label>
-          <Input
-            id="type"
-            value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            required
-            className={outlineClass}
-          />
+          {/* Type */}
+          <div className="flex-1 flex flex-col gap-2">
+            <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+              Type
+            </Label>
+            <Input
+              placeholder="Enter type"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className={outlineClass}
+            />
+          </div>
         </div>
+      </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-3 mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-
-          <Button
-            type="submit"
-            className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200"
-          >
-            {section ? "Update" : "Add"}
-          </Button>
-        </div>
-      </form>
+      {/* Buttons */}
+      <DialogFooter className="mt-6 flex justify-end gap-4 border-t border-[#E5D3C6] pt-6">
+        <Button
+          type="button"
+          variant="outline"
+          className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white 
+          hover:bg-[#5C3A21] hover:text-white rounded-xl px-6 py-2 font-semibold transition-all duration-200 shadow-sm"
+          onClick={() => {
+            setSectionName("");
+            setType("");
+            onClose();
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] 
+          rounded-xl px-6 py-2 font-semibold transition-all duration-200 shadow-md"
+          onClick={handleSubmit}
+        >
+          {section ? "Save Changes" : "Add Section"}
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 }

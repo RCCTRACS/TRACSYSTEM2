@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
 interface MenuItem {
@@ -10,8 +10,8 @@ interface MenuItem {
   url: string;
 }
 
-// Sidebar slide-in animation
-const sidebarVariants = {
+// Sidebar slide-in
+const sidebarVariants: Variants = {
   hidden: { opacity: 0, x: -120 },
   show: {
     opacity: 1,
@@ -20,7 +20,6 @@ const sidebarVariants = {
       type: "spring",
       stiffness: 80,
       damping: 18,
-      duration: 0.6,
       when: "beforeChildren",
       staggerChildren: 0.15,
       delayChildren: 0.05,
@@ -29,12 +28,12 @@ const sidebarVariants = {
 };
 
 // Menu item animation
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
+    transition: { duration: 0.5, ease: [0.42, 0, 0.58, 1] },
   },
 };
 
@@ -48,7 +47,6 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Only animate the first time
   const [shouldAnimate] = useState<boolean>(() => {
     try {
       return !Boolean(sessionStorage.getItem("tracSidebarHasAnimated"));
@@ -69,14 +67,14 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
 
   return (
     <div className="flex">
-      {/* Sidebar container (fixed) */}
+      {/* Sidebar container */}
       <motion.div
-        className="fixed left-0 top-0 w-24 h-screen bg-[#5B3A29] flex flex-col items-center py-6 rounded-r-2xl shadow-lg z-50"
+        className="fixed left-0 top-0 w-24 bg-sidebar flex flex-col items-center py-6 rounded-r-2xl shadow-lg min-h-screen"
         variants={sidebarVariants}
         initial={shouldAnimate ? "hidden" : false}
         animate="show"
       >
-        {/* ===== Logo ===== */}
+        {/* Logo Animation */}
         <AnimatePresence>
           {shouldAnimate ? (
             <motion.div
@@ -98,7 +96,7 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
                 scale: 1,
                 opacity: 1,
               }}
-              transition={{ duration: 1, ease: "easeInOut" }}
+              transition={{ duration: 1, ease: [0.42, 0, 0.58, 1] }}
               className="mb-8"
             >
               <img src="/logo.png" alt="TRACS Logo" className="w-16 h-16 object-contain drop-shadow-md" />
@@ -110,12 +108,16 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
           )}
         </AnimatePresence>
 
-        {/* ===== Menu items ===== */}
-        <nav className="flex flex-col space-y-4 w-full">
+        {/* Menu Items */}
+        <nav className="flex flex-col space-y-4 w-full flex-1 justify-start">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.url;
             return (
-              <motion.div key={item.url} className="relative group flex justify-center" variants={itemVariants}>
+              <motion.div
+                key={item.url}
+                className="relative group flex justify-center"
+                variants={itemVariants}
+              >
                 <button
                   onClick={() => navigate(item.url)}
                   className={`w-14 h-14 flex items-center justify-center rounded-xl border-2 transition-all duration-200
@@ -147,8 +149,8 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
         </nav>
       </motion.div>
 
-      {/* Main content wrapper (automatically shifted right) */}
-      <main className="flex-1 ml-2 p-6">{children}</main>
+      {/* Push content right */}
+      <main className="ml-24 flex-1">{children}</main>
     </div>
   );
 };

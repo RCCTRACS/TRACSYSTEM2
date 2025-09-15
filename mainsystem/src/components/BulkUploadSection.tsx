@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useState, useRef } from "react";
 import {
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
@@ -18,17 +20,24 @@ interface BulkUploadSectionProps {
 
 export function BulkUploadSection({ onUpload, onClose }: BulkUploadSectionProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<Section[]>([]);
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleUpload = () => {
-    if (!file) return;
-
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = e.target.files?.[0] || null;
+    setFile(uploadedFile);
     setError("");
-    const reader = new FileReader();
 
-    reader.onload = (e) => {
-      const text = e.target?.result;
-      if (typeof text !== "string") return;
+    if (!uploadedFile) {
+      setPreview([]);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
 
       Papa.parse<Section>(text, {
         header: true,
@@ -39,32 +48,59 @@ export function BulkUploadSection({ onUpload, onClose }: BulkUploadSectionProps)
           const isValid = expectedHeaders.every((h) => headers.includes(h));
           if (!isValid) {
             setError(`CSV headers must be: ${expectedHeaders.join(", ")}`);
+            setPreview([]);
             return;
           }
 
-          const newSections: Section[] = results.data.map((row) => ({
-            id: Date.now().toString() + Math.random().toString(36).slice(2),
+          const parsed: Section[] = results.data.map((row, idx) => ({
+            id: Date.now().toString() + idx.toString(),
             section: row.Section || "",
             type: row.Type || "",
           }));
 
-          onUpload(newSections);
-          setFile(null);
-          onClose();
+          setPreview(parsed);
         },
         error: (err) => {
           setError("Error parsing file: " + err.message);
+          setPreview([]);
         },
       });
     };
 
-    reader.readAsText(file);
+    reader.readAsText(uploadedFile);
+  };
+
+  const handleUpload = () => {
+    if (loading) return;
+    if (preview.length === 0) {
+      setError("No valid data to upload.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      onUpload(preview);
+
+      // Reset state
+      setFile(null);
+      setPreview([]);
+      setError("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to upload sections.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <DialogContent className="sm:max-w-[500px] bg-popover p-6 rounded-xl shadow-md">
       <DialogHeader className="pb-4 border-b border-[#5C3A21]/30">
-        <DialogTitle className="text-xl font-bold text-black">Select a CSV file</DialogTitle>
+        <DialogTitle className="text-xl font-bold text-black">
+          Bulk Upload Sections
+        </DialogTitle>
       </DialogHeader>
 
       <div className="space-y-6 mt-4">
@@ -74,8 +110,9 @@ export function BulkUploadSection({ onUpload, onClose }: BulkUploadSectionProps)
           <Input
             type="file"
             accept=".csv"
+            onChange={handleFileChange}
+            ref={fileInputRef}
             className="w-full rounded-lg border-[3px] border-[#3E1F0F] focus:border-[#3E1F0F] focus:ring-1 focus:ring-[#3E1F0F]"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
           <p className="text-xs text-muted-foreground">
             {file ? file.name : "No file chosen"}
@@ -83,22 +120,49 @@ export function BulkUploadSection({ onUpload, onClose }: BulkUploadSectionProps)
           {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
         </div>
 
+        {/* Preview */}
+        {preview.length > 0 && (
+          <div className="max-h-40 overflow-y-auto border p-3 rounded-lg bg-gray-50 text-sm shadow-inner">
+            <p className="font-semibold text-black mb-2">Preview:</p>
+            <div className="grid grid-cols-2 font-bold border-b pb-1 mb-1 text-[#3E1F0F]">
+              <span>Section</span>
+              <span>Type</span>
+            </div>
+            {preview.map((s, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-2 gap-2 py-1 border-b last:border-0"
+              >
+                <span>{s.section}</span>
+                <span>{s.type}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Footer Buttons */}
         <div className="flex justify-end gap-3 mt-2">
           <Button
             variant="outline"
             className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200 rounded-lg"
-            onClick={() => { setFile(null); setError(""); onClose(); }}
+            onClick={() => {
+              setFile(null);
+              setPreview([]);
+              setError("");
+              if (fileInputRef.current) fileInputRef.current.value = "";
+              onClose();
+            }}
+            disabled={loading}
           >
             Cancel
           </Button>
           <Button
             className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200 rounded-lg flex items-center"
             onClick={handleUpload}
-            disabled={!file}
+            disabled={!file || loading}
           >
             <Upload className="h-4 w-4 mr-2" />
-            Upload
+            {loading ? "Uploading..." : "Upload"}
           </Button>
         </div>
       </div>

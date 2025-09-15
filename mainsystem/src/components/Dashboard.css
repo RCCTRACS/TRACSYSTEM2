@@ -56,6 +56,7 @@ body, .dashboard {
 .icon-box:hover {
   transform: scale(1.05);
 }
+
 .icon-box img:hover {
   opacity: 1;
 }
@@ -118,6 +119,10 @@ body, .dashboard {
 }
 
 /* Profile Chip */
+.profile-chip-container {
+  position: relative;
+}
+
 .profile-chip {
   display: flex;
   align-items: center;
@@ -125,8 +130,9 @@ body, .dashboard {
   padding: 6px 12px;
   border-radius: 20px;
   cursor: pointer;
-  border: 3px solid #3F2305; /* Brown border */
+  border: 3px solid #3F2305;
   box-sizing: border-box;
+  transition: background 0.2s;
 }
 
 .profile-chip:hover {
@@ -142,6 +148,45 @@ body, .dashboard {
 .profile-chip-name {
   font-size: 14px;
   color: #000000;
+}
+
+.dropdown-arrow {
+  font-size: 0.7rem;
+  margin-left: 6px;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #ffffff;
+  border: 2px solid #3F2305;
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 10;
+  animation: fadeInDropdown 0.3s ease forwards;
+}
+
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #f9eacb;
 }
 
 /* Content */
@@ -204,9 +249,14 @@ body, .dashboard {
 }
 
 .bar-label {
-  width: 50px;
+  width: 100px; /* Increase width to prevent wrapping */
   font-size: 14px;
   color: #000000;
+  text-align: left;
+  white-space: nowrap; /* Keep text in one line */
+  overflow: hidden;   /* Hide overflow text */
+  text-overflow: ellipsis; /* Show ... if text too long */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .bar-track {
@@ -229,6 +279,7 @@ body, .dashboard {
   text-align: right;
   font-size: 14px;
   color: #333;
+  flex-shrink: 0;
 }
 
 /* Sidebar cascade animation */
@@ -243,64 +294,4 @@ body, .dashboard {
     opacity: 1;
     transform: translateX(0);
   }
-}
-
-/* Profile chip dropdown */
-.profile-chip-container {
-  position: relative;
-}
-
-.profile-chip {
-  display: flex;
-  align-items: center;
-  background: #f3f3f3;
-  padding: 6px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  border: 3px solid #3F2305;
-  box-sizing: border-box;
-  transition: background 0.2s;
-}
-
-.profile-chip:hover {
-  background: #eaeaea;
-}
-
-.dropdown-arrow {
-  font-size: 0.7rem;
-  margin-left: 6px;
-}
-
-.profile-dropdown {
-  position: absolute;
-  top: 110%;
-  right: 0;
-  background: #ffffff;
-  border: 2px solid #3F2305;
-  border-radius: 10px;
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  z-index: 10;
-  animation: fadeInDropdown 0.3s ease forwards;
-}
-
-@keyframes fadeInDropdown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.dropdown-item {
-  padding: 0.7rem 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.dropdown-item:hover {
-  background: #f9eacb;
 }

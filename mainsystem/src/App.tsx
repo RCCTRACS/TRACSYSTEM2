@@ -26,6 +26,10 @@ import NotFound from "./pages/NotFound";
 // ✅ Layout for teacher sidebar
 import TeacherLayout from "./components/TeacherLayout";
 
+// ✅ Attendance Screens
+import AttendanceConfirmationPage from "./pages/AttendanceConfirmationPage";
+import { MainAttendanceScreen } from "./components/attendance/MainAttendanceScreen";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -56,6 +60,10 @@ const App = () => (
             <Route path="/teacher-attendance" element={<TeacherAttendance />} />
             <Route path="/teacher-students" element={<TeacherStudents />} />
           </Route>
+
+          {/* ================= Attendance Screens ================= */}
+          <Route path="/attendance" element={<MainAttendanceScreen />} />
+          <Route path="/attendance-confirmation" element={<AttendanceConfirmationPage />} />
 
           {/* ================= Catch-all ================= */}
           <Route path="*" element={<NotFound />} />

@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   Dialog,
@@ -9,36 +11,54 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface DeleteAttendanceDialogProps {
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  onDelete: () => void;
+  onConfirm: () => void;
+  attendanceName?: string; // Optional, for display
 }
 
-const DeleteAttendanceDialog: React.FC<DeleteAttendanceDialogProps> = ({
-  open,
+export function DeleteAttendanceDialog({
+  isOpen,
   onClose,
-  onDelete,
-}) => {
+  onConfirm,
+  attendanceName,
+}: DeleteAttendanceDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="rounded-2xl shadow-lg">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-sm rounded-xl border-2 border-[#5C4033]">
         <DialogHeader>
-          <DialogTitle>Delete Attendance</DialogTitle>
+          <DialogTitle className="text-[#5C4033] text-lg font-bold">
+            Delete Attendance
+          </DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-600">
-          Are you sure you want to delete this attendance record? This action is irreversible.
-        </p>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <div className="py-2 text-center text-base text-[#5C4033]">
+          Are you sure you want to delete
+          {attendanceName ? (
+            <>
+              {" "}
+              <span className="font-semibold">{attendanceName}</span>
+            </>
+          ) : (
+            " this attendance record"
+          )}
+          ?
+        </div>
+        <DialogFooter className="flex justify-end gap-2 pt-2">
+          <Button
+            variant="outline"
+            className="border-[#5C4033] text-[#5C4033] hover:bg-[#f9eacb] hover:text-[#5C4033]"
+            onClick={onClose}
+          >
             Cancel
           </Button>
-          <Button variant="destructive" onClick={onDelete}>
+          <Button
+            className="bg-[#5C4033] text-white hover:bg-[#7a5230]"
+            onClick={onConfirm}
+          >
             Delete
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default DeleteAttendanceDialog;
+}

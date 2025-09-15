@@ -137,16 +137,24 @@ if (!$input && stripos($contentType, "application/x-www-form-urlencoded") !== fa
 
 // ------------------- GET -------------------
 if ($method === 'GET') {
-    $result = $conn->query("SELECT * FROM attendance ORDER BY created_at DESC");
+    $today = date('Y-m-d');
+    $stmt = $conn->prepare("SELECT * FROM attendance WHERE DATE(created_at) = ? ORDER BY created_at DESC");
+    $stmt->bind_param("s", $today);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     $attendances = [];
     while ($row = $result->fetch_assoc()) {
         $row['time_in']  = $row['time_in']  ? date("h:i A", strtotime($row['time_in'])) : null;
         $row['time_out'] = $row['time_out'] ? date("h:i A", strtotime($row['time_out'])) : null;
         $attendances[] = $row;
     }
+
     echo json_encode($attendances);
+    $stmt->close();
     exit;
 }
+
 
 // ------------------- POST -------------------
 if ($method === 'POST') {

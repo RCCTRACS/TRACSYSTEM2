@@ -4,12 +4,16 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useState } from "react";
-import { Filter } from "lucide-react";
 
 interface FilterStrandDialogProps {
   onFilter: (strand: string) => void;
@@ -22,51 +26,71 @@ export function FilterStrandDialog({
 }: FilterStrandDialogProps) {
   // ✅ Fixed allowed strands
   const availableStrands = ["All", "STEM", "ABM", "HUMSS", "GAS"];
-  const [selectedStrand, setSelectedStrand] = useState("All");
+  const [selectedStrand, setSelectedStrand] = useState<string>("All");
 
   const handleApplyFilter = () => {
     onFilter(selectedStrand);
     onClose();
   };
 
+  const handleReset = () => {
+    setSelectedStrand("All");
+    onFilter("All");
+    onClose();
+  };
+
+  const selectStyle =
+    "w-full border-2 border-[#5C4033] rounded-lg px-3 py-2 text-black bg-white focus:ring-0 focus:border-[#5C4033] transition-colors";
+
   return (
-    <DialogContent>
-      <DialogHeader className="flex flex-col items-center text-center space-y-2">
-        <Filter className="h-10 w-10 text-[#5C4033]" />
-        <DialogTitle>Filter Strands</DialogTitle>
-        <DialogDescription>
-          Select a strand to filter the list. <br />
-          Default is <span className="font-semibold">All</span>.
-        </DialogDescription>
+    <DialogContent className="sm:max-w-[480px] bg-white p-8 rounded-3xl shadow-xl border border-[#D9B99B]">
+      {/* Header */}
+      <DialogHeader className="pb-6">
+        <DialogTitle className="text-2xl font-extrabold text-black text-left">
+          Filter Strands
+        </DialogTitle>
       </DialogHeader>
 
-      <div className="mt-4 space-y-3">
-        {availableStrands.map((strand) => (
-          <div
-            key={strand}
-            onClick={() => setSelectedStrand(strand)}
-            className={`cursor-pointer px-4 py-2 rounded-md border transition-colors ${
-              selectedStrand === strand
-                ? "bg-[#5C4033] text-white"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
+      {/* Strand Dropdown */}
+      <div className="flex flex-col gap-6">
+        <div>
+          <p className="mb-2 text-sm font-semibold text-black tracking-wide">
+            Strand
+          </p>
+          <Select
+            value={selectedStrand}
+            onValueChange={(val) => setSelectedStrand(val)}
           >
-            {strand}
-          </div>
-        ))}
+            <SelectTrigger className={selectStyle}>
+              <SelectValue placeholder="Select Strand" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableStrands.map((strand) => (
+                <SelectItem key={strand} value={strand}>
+                  {strand}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <DialogFooter className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" onClick={onClose}>
-          Cancel
+      {/* Footer Buttons */}
+      <div className="mt-8 flex justify-end gap-3">
+        <Button
+          variant="outline"
+          className="px-5 py-2 rounded-lg border-2 border-[#5C4033] text-[#5C4033] font-medium hover:bg-[#f5ebe2]"
+          onClick={handleReset}
+        >
+          Show All
         </Button>
         <Button
+          className="px-5 py-2 rounded-lg bg-[#5C3A21] text-white font-medium hover:bg-[#4a3228]"
           onClick={handleApplyFilter}
-          className="bg-[#5C4033] text-white hover:bg-[#4a3228]"
         >
-          Apply
+          Apply Filter
         </Button>
-      </DialogFooter>
+      </div>
     </DialogContent>
   );
 }

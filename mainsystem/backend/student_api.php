@@ -14,12 +14,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Database config
 require __DIR__ . "/../database/db_config.php";
 
-// Read JSON input
-$input = json_decode(file_get_contents("php://input"), true);
+// Detect request input (JSON or form-urlencoded)
+$rawInput = file_get_contents("php://input");
+$input = [];
+if (!empty($rawInput)) {
+    $decoded = json_decode($rawInput, true);
+    if (json_last_error() === JSON_ERROR_NONE) {
+        $input = $decoded;
+    } else {
+        parse_str($rawInput, $input);
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($input) && !empty($_POST)) {
+    $input = $_POST;
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
-
     case "GET":
         if (isset($_GET['barcode_id'])) {
             $stmt = $conn->prepare("SELECT * FROM students WHERE barcode_id = ?");
@@ -37,21 +50,19 @@ switch ($method) {
         break;
 
     case "POST":
-        // Validate required fields
         if (!isset($input['barcode_id'], $input['student_name'], $input['year_level'], $input['department'], $input['parent_email'])) {
             echo json_encode(["success" => false, "message" => "Missing required fields"]);
             break;
         }
 
-        // Use INSERT ... ON DUPLICATE KEY UPDATE to avoid duplicate errors
         $stmt = $conn->prepare("
             INSERT INTO students (barcode_id, student_name, year_level, department, parent_email) 
             VALUES (?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
-            student_name=VALUES(student_name),
-            year_level=VALUES(year_level),
-            department=VALUES(department),
-            parent_email=VALUES(parent_email)
+                student_name=VALUES(student_name),
+                year_level=VALUES(year_level),
+                department=VALUES(department),
+                parent_email=VALUES(parent_email)
         ");
 
         $stmt->bind_param(
@@ -105,15 +116,27 @@ switch ($method) {
             break;
         }
 
-        $stmt = $conn->prepare("DELETE FROM students WHERE barcode_id = ?");
-        $stmt->bind_param("s", $input['barcode_id']);
+        $barcode_id = $input['barcode_id'];
 
-        if ($stmt->execute()) {
-            echo json_encode(["success" => true, "message" => "Student deleted successfully"]);
-        } else {
-            echo json_encode(["success" => false, "message" => $stmt->error]);
+        $conn->begin_transaction();
+
+        try {
+            $stmt1 = $conn->prepare("DELETE FROM attendance WHERE barcode_id = ?");
+            $stmt1->bind_param("s", $barcode_id);
+            $stmt1->execute();
+            $stmt1->close();
+
+            $stmt2 = $conn->prepare("DELETE FROM students WHERE barcode_id = ?");
+            $stmt2->bind_param("s", $barcode_id);
+            $stmt2->execute();
+            $stmt2->close();
+
+            $conn->commit();
+            echo json_encode(["success" => true, "message" => "Student and attendance deleted permanently"]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            echo json_encode(["success" => false, "message" => "Error deleting student: " . $e->getMessage()]);
         }
-        $stmt->close();
         break;
 
     default:
