@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Download, Filter } from "lucide-react";
+import { Download, Filter, ArrowLeft } from "lucide-react";
 import { FilterAttendanceDialog } from "./FilterAttendanceDialog";
 
 interface Student {
@@ -34,7 +34,6 @@ const CourseDetail = ({ courseCode, courseTitle, department, courseTime, grade }
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({ status: "" });
 
-  // Fetch students
   useEffect(() => {
     const fetchStudents = async () => {
       try {
@@ -69,7 +68,6 @@ const CourseDetail = ({ courseCode, courseTitle, department, courseTime, grade }
     );
   };
 
-  // Export CSV
   const handleExport = () => {
     const csvHeader = "Barcode ID,Name,Year Level,Department,Status\n";
     const csvRows = students
@@ -87,13 +85,26 @@ const CourseDetail = ({ courseCode, courseTitle, department, courseTime, grade }
     document.body.removeChild(link);
   };
 
-  // Filtered students
   const filteredStudents = students.filter((s) =>
     !filters.status || s.status === filters.status
   );
 
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
+
+  // Function to get status color
+  const getStatusColor = (status: "Present" | "Late" | "Absent") => {
+    switch (status) {
+      case "Present":
+        return "bg-green-500 text-white";
+      case "Late":
+        return "bg-yellow-400 text-black";
+      case "Absent":
+        return "bg-red-500 text-white";
+      default:
+        return "";
+    }
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -102,6 +113,14 @@ const CourseDetail = ({ courseCode, courseTitle, department, courseTime, grade }
         <h2 className="text-2xl font-bold text-black">{courseCode}</h2>
         <p className="text-lg text-black">{courseTitle}</p>
         <p className="text-sm text-gray-600">{courseTime}</p>
+
+        {/* Back Button */}
+        <Button
+          className={outlineDarkBrownBtn + " flex items-center gap-2 mt-4"}
+          onClick={() => (window.location.href = "/teacher-dashboard")}
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </Button>
       </div>
 
       {/* Actions */}
@@ -146,7 +165,7 @@ const CourseDetail = ({ courseCode, courseTitle, department, courseTime, grade }
             </p>
           ) : (
             <div className="mt-2">
-              {/* Header Row - simple labels with bottom border */}
+              {/* Header Row */}
               <div className="grid grid-cols-5 gap-x-4 text-center font-semibold border-b border-gray-400 px-4 py-2">
                 <div>Barcode ID</div>
                 <div>Name</div>
@@ -176,7 +195,7 @@ const CourseDetail = ({ courseCode, courseTitle, department, courseTime, grade }
                           )
                         }
                       >
-                        <SelectTrigger className="w-24">
+                        <SelectTrigger className={`w-24 ${getStatusColor(student.status)}`}>
                           <SelectValue placeholder={student.status} />
                         </SelectTrigger>
                         <SelectContent>
