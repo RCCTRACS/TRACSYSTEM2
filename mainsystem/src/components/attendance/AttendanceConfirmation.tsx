@@ -110,80 +110,84 @@ export const AttendanceConfirmation = () => {
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Header */}
         <div className="flex items-center justify-between p-6">
-          <img src={rccSeal} alt="RCC Seal" className="w-24 h-24" />
-          <img src={tracsSeal} alt="TRACS Seal" className="w-24 h-24" />
+          <img src={rccSeal} alt="RCC Seal" className="w-20 h-20 sm:w-24 sm:h-24" />
+          <img src={tracsSeal} alt="TRACS Seal" className="w-20 h-20 sm:w-24 sm:h-24" />
         </div>
 
         {/* Dynamic Banner */}
         <div
-          className={`${bannerColor} text-white text-center py-6 text-4xl font-extrabold shadow-md`}
+          className={`${bannerColor} text-white text-center py-5 sm:py-6 text-2xl sm:text-4xl font-extrabold shadow-md`}
         >
           {status}
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex items-center justify-center px-6 py-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-6xl w-full">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-12 py-6 sm:py-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 max-w-6xl w-full">
             {/* Student Photo */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden flex justify-center items-center p-8">
+            <div className="bg-white rounded-lg shadow-lg flex justify-center items-center p-4 sm:p-6">
               {barcode ? (
-                <img
-                  src={`http://192.168.1.13/capstone/mainsystem/students/${barcode}.jpg`}
-                  alt="Student"
-                  className="w-[420px] h-[520px] object-cover rounded-lg"
-                  onError={(e) =>
-                    ((e.target as HTMLImageElement).src = "/fallback-student.png")
-                  }
-                />
+                <div className="w-full max-w-[420px] aspect-[3/4] flex justify-center items-center">
+                  <img
+                    src={`http://192.168.1.13/capstone/mainsystem/students/${barcode}.jpg`}
+                    alt="Student"
+                    className="w-full h-full object-cover rounded-lg"
+                    onError={(e) =>
+                      ((e.target as HTMLImageElement).src = "/fallback-student.png")
+                    }
+                  />
+                </div>
               ) : (
-                <p className="text-gray-500 text-2xl">No photo available</p>
+                <p className="text-gray-500 text-lg sm:text-2xl">No photo available</p>
               )}
             </div>
 
             {/* Info Section */}
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-6 sm:gap-8">
               {/* Time */}
-              <div className="bg-[#4B2E1A] text-white rounded-md p-6 shadow-lg">
-                <h2 className="text-3xl font-bold mb-3">{label}</h2>
-                <p className="text-4xl font-mono font-semibold">
+              <div className="bg-[#4B2E1A] text-white rounded-md p-4 sm:p-6 shadow-lg">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3">
+                  {label}
+                </h2>
+                <p className="text-2xl sm:text-4xl font-mono font-semibold">
                   {formattedDate} {formattedTime}
                 </p>
               </div>
 
               {/* Student Info */}
-              <div className="bg-[#4B2E1A] text-white rounded-md p-8 shadow-lg">
-                <h2 className="text-3xl font-bold mb-6 text-center">
+              <div className="bg-[#4B2E1A] text-white rounded-md p-6 sm:p-8 shadow-lg">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">
                   Personal Information
                 </h2>
                 {student ? (
-                  <div className="space-y-6 text-2xl">
-                    <div className="flex items-center gap-4">
-                      <User className="w-7 h-7 text-yellow-300" />
+                  <div className="space-y-4 sm:space-y-6 text-lg sm:text-2xl">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <User className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300" />
                       <span>
                         <strong>Student Name:</strong> {student.student_name}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <CreditCard className="w-7 h-7 text-yellow-300" />
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <CreditCard className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300" />
                       <span>
                         <strong>Barcode ID:</strong> {student.barcode_id}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <GraduationCap className="w-7 h-7 text-yellow-300" />
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300" />
                       <span>
                         <strong>Year Level:</strong> {student.year_level}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <Building className="w-7 h-7 text-yellow-300" />
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <Building className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300" />
                       <span>
                         <strong>Department:</strong> {student.department}
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-center text-gray-300 text-xl">
+                  <p className="text-center text-gray-300 text-lg sm:text-xl">
                     Loading student info...
                   </p>
                 )}
@@ -193,7 +197,7 @@ export const AttendanceConfirmation = () => {
         </div>
 
         {/* Footer */}
-        <div className="p-5 bg-black/70 text-center text-white text-lg">
+        <div className="p-4 sm:p-5 bg-black/70 text-center text-white text-sm sm:text-lg">
           Powered by TRACS • Attendance System
         </div>
       </div>

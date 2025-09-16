@@ -69,7 +69,7 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
     <div className="flex">
       {/* Sidebar container */}
       <motion.div
-        className="fixed left-0 top-0 w-24 bg-sidebar flex flex-col items-center py-6 rounded-r-2xl shadow-lg min-h-screen"
+        className="fixed left-0 top-0 w-24 bg-sidebar flex flex-col items-center py-6 rounded-r-2xl shadow-lg min-h-screen z-50"
         variants={sidebarVariants}
         initial={shouldAnimate ? "hidden" : false}
         animate="show"
@@ -99,11 +99,19 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
               transition={{ duration: 1, ease: [0.42, 0, 0.58, 1] }}
               className="mb-8"
             >
-              <img src="/logo.png" alt="TRACS Logo" className="w-16 h-16 object-contain drop-shadow-md" />
+              <img
+                src="/logo.png"
+                alt="TRACS Logo"
+                className="w-16 h-16 object-contain drop-shadow-md"
+              />
             </motion.div>
           ) : (
             <div className="mb-8">
-              <img src="/logo.png" alt="TRACS Logo" className="w-16 h-16 object-contain drop-shadow-md" />
+              <img
+                src="/logo.png"
+                alt="TRACS Logo"
+                className="w-16 h-16 object-contain drop-shadow-md"
+              />
             </div>
           )}
         </AnimatePresence>
@@ -130,7 +138,9 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
                   <img
                     src={item.src}
                     alt={item.label}
-                    className={`w-7 h-7 object-contain ${isActive ? "brightness-125" : ""}`}
+                    className={`w-7 h-7 object-contain ${
+                      isActive ? "brightness-125" : ""
+                    }`}
                   />
                 </button>
 
@@ -139,7 +149,7 @@ const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
                   className="absolute left-full top-1/2 -translate-y-1/2 ml-3 
                     border border-[#5B3A29] text-black text-lg font-bold px-3 py-1 
                     rounded-md shadow-md whitespace-nowrap transition-opacity duration-200 bg-white 
-                    opacity-0 group-hover:opacity-100 z-50"
+                    opacity-0 group-hover:opacity-100 z-[60]"
                 >
                   {item.label}
                 </span>

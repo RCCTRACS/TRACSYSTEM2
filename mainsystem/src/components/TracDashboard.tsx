@@ -88,7 +88,7 @@ const TracDashboard = ({ teacherEmail }: TracDashboardProps) => {
     return (
       <div className="flex min-h-screen bg-white">
         <TracSidebar teacher={teacher} onDashboardClick={goToDashboard} />
-        <div className="flex-1">
+        <div className="flex-1 ml-0">
           <TracHeader teacher={teacher} />
           <CourseDetail
             courseCode={selectedCourse.courseCode}
@@ -106,12 +106,12 @@ const TracDashboard = ({ teacherEmail }: TracDashboardProps) => {
       <TracSidebar teacher={teacher} onDashboardClick={goToDashboard} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col ml-0">
         {/* Header */}
         <TracHeader teacher={teacher} />
 
         {/* Dashboard */}
-        <main className="p-6 flex-1">
+        <main className="px-2 py-4 flex-1">
           {loading ? (
             <p>Loading courses...</p>
           ) : (

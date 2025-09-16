@@ -35,9 +35,23 @@ $method = $_SERVER['REQUEST_METHOD'];
 switch ($method) {
     case "GET":
         if (isset($_GET['barcode_id'])) {
+            // Fetch student by barcode
             $stmt = $conn->prepare("SELECT * FROM students WHERE barcode_id = ?");
             $stmt->bind_param("s", $_GET['barcode_id']);
+        } elseif (isset($_GET['search'])) {
+            // Search students
+            $search = "%" . $_GET['search'] . "%";
+            $stmt = $conn->prepare("
+                SELECT * FROM students
+                WHERE barcode_id LIKE ? 
+                   OR student_name LIKE ? 
+                   OR department LIKE ? 
+                   OR year_level LIKE ?
+                ORDER BY created_at DESC
+            ");
+            $stmt->bind_param("ssss", $search, $search, $search, $search);
         } else {
+            // Fetch all students
             $stmt = $conn->prepare("SELECT * FROM students ORDER BY created_at DESC");
         }
 

@@ -121,7 +121,7 @@ export const MainAttendanceScreen = () => {
         
         {/* Full-width Brown Header Bar */}
         <div className="w-full bg-[#4B2E1A]/95 shadow-lg p-6 mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-oldenglish font-bold text-white mb-2">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             REPUBLIC CENTRAL COLLEGES
           </h1>
           <p className="text-lg md:text-xl text-white font-semibold tracking-wide">

@@ -83,7 +83,8 @@ const AdminSidebar: React.FC = () => {
     <div className="flex">
       {/* Sidebar container */}
       <motion.div
-        className="fixed left-0 top-0 w-24 bg-sidebar flex flex-col items-center py-6 rounded-r-2xl shadow-lg min-h-screen"
+        className="fixed left-0 top-0 w-24 bg-sidebar flex flex-col items-center py-6 
+                   rounded-r-2xl shadow-lg min-h-screen z-50"
         variants={sidebarVariants}
         initial={shouldAnimate ? "hidden" : false}
         animate="show"
@@ -139,7 +140,7 @@ const AdminSidebar: React.FC = () => {
             return (
               <motion.div
                 key={item.url}
-                className="relative group flex justify-center"
+                className="relative group flex justify-center z-50"
                 variants={itemVariants}
               >
                 <button
@@ -165,7 +166,7 @@ const AdminSidebar: React.FC = () => {
                   className="absolute left-full top-1/2 -translate-y-1/2 ml-3 
                     border border-[#5B3A29] text-black text-lg font-bold px-3 py-1 
                     rounded-md shadow-md whitespace-nowrap transition-opacity duration-200 bg-white 
-                    opacity-0 group-hover:opacity-100 z-50"
+                    opacity-0 group-hover:opacity-100 z-[9999]"
                 >
                   {item.label}
                 </span>
