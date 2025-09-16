@@ -147,7 +147,7 @@ export const MainAttendanceScreen = () => {
         <Card className="bg-rcc-panel/90 border-rcc-border shadow-panel backdrop-blur-sm">
           <div className="p-6 text-center flex flex-col items-center gap-4">
             <p className="text-lg text-white font-medium px-4 py-2 bg-[#4B2E1A]/80 rounded-md shadow">
-              Use the scanner or manual entry to get started
+              Please scan your ID
             </p>
 
             <form
@@ -156,7 +156,7 @@ export const MainAttendanceScreen = () => {
             >
               <Input
                 type="text"
-                placeholder="Scan or enter your Barcode ID"
+                placeholder="Barcode ID"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
                 className="px-4 py-3 text-lg text-center border-2 border-rcc-gold rounded-md shadow focus:outline-none focus:ring-2 focus:ring-yellow-400"
