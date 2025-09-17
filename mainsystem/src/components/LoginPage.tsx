@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrorMsg("Unable to connect to the server. Please try again later.");
+      setErrorMsg("Wrong email or password. Please try again.");
     } finally {
       setLoading(false);
     }
