@@ -91,7 +91,7 @@ export const AttendanceConfirmation = () => {
     // Auto-redirect after 4s
     const timeout = setTimeout(() => {
       navigate("/attendance");
-    }, 4000);
+    }, 3000);
 
     return () => clearTimeout(timeout);
   }, [barcode, navigate, status]);

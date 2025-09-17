@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { StudentFormDialog } from "./StudentFormDialog";
 import { DeleteStudentDialog } from "./DeleteStudentDialog";
@@ -25,6 +26,8 @@ export interface Student {
   student_name: string;
   year_level: string;
   department: string;
+  strand?: string;
+  section?: string;
   parent_email: string;
 }
 
@@ -46,6 +49,7 @@ export function StudentManagement() {
     null
   );
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
@@ -53,13 +57,14 @@ export function StudentManagement() {
   const API_URL =
     "http://192.168.1.13/capstone/mainsystem/backend/student_api.php";
 
-  // --- Fetch Students from backend ---
+  // --- Fetch Students ---
   const fetchStudents = async () => {
     try {
-      const res = await fetch(API_URL, { method: "GET" });
+      const res = await fetch(API_URL);
       const result = await res.json();
-      setStudents(result.data || []);
-      setFilteredStudents(result.data || []);
+      const list: Student[] = result?.data ?? [];
+      setStudents(list);
+      setFilteredStudents(list);
     } catch (err) {
       console.error("Failed to fetch students", err);
     }
@@ -77,25 +82,44 @@ export function StudentManagement() {
         .then((res) => res.json())
         .then((data) => {
           const list = data?.users ?? (Array.isArray(data) ? data : []);
-          const user = list.find((u: any) => u.id === userId);
+          const user = list.find((u: any) => String(u.id) === String(userId));
           setCurrentUser(user ?? null);
-        });
+        })
+        .catch(() => setCurrentUser(null));
     }
+  }, []);
+
+  // --- Close dropdown when clicking outside ---
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // --- Search filter ---
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     const lowerTerm = term.toLowerCase();
-    const searchFiltered = students.filter(
-      (s) =>
-        s.barcode_id.toLowerCase().includes(lowerTerm) ||
-        s.student_name.toLowerCase().includes(lowerTerm) ||
-        s.year_level.toLowerCase().includes(lowerTerm) ||
-        s.department.toLowerCase().includes(lowerTerm) ||
-        s.parent_email.toLowerCase().includes(lowerTerm)
+    setFilteredStudents(
+      students.filter(
+        (s) =>
+          s.barcode_id.toLowerCase().includes(lowerTerm) ||
+          s.student_name.toLowerCase().includes(lowerTerm) ||
+          s.year_level.toLowerCase().includes(lowerTerm) ||
+          s.department.toLowerCase().includes(lowerTerm) ||
+          (s.strand ?? "").toLowerCase().includes(lowerTerm) ||
+          (s.section ?? "").toLowerCase().includes(lowerTerm) ||
+          s.parent_email.toLowerCase().includes(lowerTerm)
+      )
     );
-    setFilteredStudents(term.trim() ? searchFiltered : students);
   };
 
   // --- Add/Edit Student ---
@@ -109,7 +133,6 @@ export function StudentManagement() {
       });
 
       if (selectedStudent) {
-        // Editing → send original barcode_id separately
         formData.append("original_barcode_id", selectedStudent.barcode_id);
 
         await fetch(API_URL, {
@@ -118,7 +141,6 @@ export function StudentManagement() {
           body: formData.toString(),
         });
       } else {
-        // Adding new
         await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -147,29 +169,28 @@ export function StudentManagement() {
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedStudent) {
-      try {
-        const formData = new URLSearchParams();
-        formData.append("barcode_id", selectedStudent.barcode_id);
+    if (!selectedStudent) return;
+    try {
+      const formData = new URLSearchParams();
+      formData.append("barcode_id", selectedStudent.barcode_id);
 
-        await fetch(API_URL, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: formData.toString(),
-        });
-        await fetchStudents();
-      } catch (err) {
-        console.error("Failed to delete student", err);
-      }
-      setIsDeleteStudentOpen(false);
-      setSelectedStudent(null);
+      await fetch(API_URL, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData.toString(),
+      });
+      await fetchStudents();
+    } catch (err) {
+      console.error("Failed to delete student", err);
     }
+    setIsDeleteStudentOpen(false);
+    setSelectedStudent(null);
   };
 
   // --- Download Template ---
   const handleDownloadTemplate = () => {
     const csvContent =
-      "barcode_id,student_name,year_level,department,parent_email\n";
+      "barcode_id,student_name,year_level,department,strand,section,parent_email\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -179,12 +200,19 @@ export function StudentManagement() {
     document.body.removeChild(link);
   };
 
-  // --- Apply Department & Year Level Filter ---
+  // --- Apply Filter ---
   const handleFilter = (department: string | null, yearLevel: string | null) => {
     let filtered = [...students];
-    if (department)
-      filtered = filtered.filter((s) => s.department === department);
-    if (yearLevel) filtered = filtered.filter((s) => s.year_level === yearLevel);
+    if (department) {
+      filtered = filtered.filter(
+        (s) => s.department.toLowerCase() === department.toLowerCase()
+      );
+    }
+    if (yearLevel) {
+      filtered = filtered.filter(
+        (s) => s.year_level.toLowerCase() === yearLevel.toLowerCase()
+      );
+    }
     setFilteredStudents(filtered);
   };
 
@@ -198,7 +226,7 @@ export function StudentManagement() {
         </div>
 
         {/* Profile dropdown */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <div
             className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
             onClick={() => setDropdownOpen((prev) => !prev)}
@@ -210,32 +238,39 @@ export function StudentManagement() {
             <span className="ml-2 text-xs">▼</span>
           </div>
 
-          {dropdownOpen && (
-            <div className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10">
-              <div
-                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
-                onClick={() => {
-                  setIsProfileOpen(true);
-                  setDropdownOpen(false);
-                }}
+          <AnimatePresence>
+            {dropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.2 }}
+                className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10"
               >
-                Edit Profile
-              </div>
-              <div
-                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
-                onClick={() => {
-                  localStorage.clear();
-                  sessionStorage.removeItem("sidebarHasAnimated");
-                  setDropdownOpen(false);
-                  window.location.href = "/";
-                }}
-              >
-                Logout
-              </div>
-            </div>
-          )}
+                <div
+                  className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                  onClick={() => {
+                    setIsProfileOpen(true);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  Edit Profile
+                </div>
+                <div
+                  className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                  onClick={() => {
+                    localStorage.clear();
+                    sessionStorage.removeItem("sidebarHasAnimated");
+                    setDropdownOpen(false);
+                    window.location.href = "/";
+                  }}
+                >
+                  Logout
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Edit Profile Modal */}
           <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
             <UserFormDialog
               user={currentUser as any}
@@ -247,7 +282,7 @@ export function StudentManagement() {
         </div>
       </div>
 
-      {/* Search + Buttons */}
+      {/* Search + Actions */}
       <div className="flex items-center justify-between">
         <div className="relative">
           <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
@@ -294,26 +329,27 @@ export function StudentManagement() {
             <DialogTrigger asChild>
               <Button className={outlineDarkBrownBtn}>
                 <Upload className="h-4 w-4 mr-2" />
-                Bulk Upload Students
+                Bulk Upload
               </Button>
             </DialogTrigger>
             {isBulkUploadOpen && (
               <BulkUploadStudent
                 onUpload={async (newStudents) => {
                   try {
-                    for (const student of newStudents) {
+                    const promises = newStudents.map((student) => {
                       const formData = new URLSearchParams();
                       Object.entries(student).forEach(([key, value]) => {
                         formData.append(key, String(value));
                       });
-                      await fetch(API_URL, {
+                      return fetch(API_URL, {
                         method: "POST",
                         headers: {
                           "Content-Type": "application/x-www-form-urlencoded",
                         },
                         body: formData.toString(),
                       });
-                    }
+                    });
+                    await Promise.all(promises);
                     fetchStudents();
                   } catch (err) {
                     console.error("Failed bulk upload", err);
@@ -362,17 +398,17 @@ export function StudentManagement() {
       <Card className="border-2 border-[#5C4033] rounded-lg shadow-sm">
         <CardHeader />
         <CardContent>
-          {/* Header Row */}
-          <div className="grid grid-cols-6 gap-x-4 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
+          <div className="grid grid-cols-8 gap-x-4 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
             <div>Barcode ID</div>
             <div>Student Name</div>
             <div>Year Level</div>
             <div>Department</div>
+            <div>Strand</div>
+            <div>Section</div>
             <div>Parent Email</div>
             <div></div>
           </div>
 
-          {/* Student Rows */}
           <div className="mt-2 space-y-3">
             {filteredStudents.length === 0 ? (
               <div className="text-center text-gray-500 py-6">
@@ -382,12 +418,14 @@ export function StudentManagement() {
               filteredStudents.map((student) => (
                 <div
                   key={student.barcode_id}
-                  className="grid grid-cols-6 gap-x-4 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
+                  className="grid grid-cols-8 gap-x-4 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
                   <div className="font-medium">{student.barcode_id}</div>
                   <div>{student.student_name}</div>
                   <div>{student.year_level}</div>
                   <div>{student.department}</div>
+                  <div>{student.strand || "-"}</div>
+                  <div>{student.section || "-"}</div>
                   <div>{student.parent_email}</div>
                   <div className="flex justify-center gap-2">
                     <Button
@@ -426,7 +464,7 @@ export function StudentManagement() {
         )}
       </Dialog>
 
-      {/* Delete Student Dialog */}
+      {/* Delete Confirmation */}
       <DeleteStudentDialog
         isOpen={isDeleteStudentOpen}
         onClose={() => {

@@ -12,10 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
-  SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectContent,
+  SelectItem,
 } from "@/components/ui/select";
 
 interface Student {
@@ -23,6 +23,9 @@ interface Student {
   student_name: string;
   year_level: string;
   department: string;
+  grade?: string | null;
+  strand?: string | null;
+  section?: string | null;
   parent_email: string;
 }
 
@@ -37,38 +40,37 @@ export function StudentFormDialog({
   onSave,
   onClose,
 }: StudentFormDialogProps) {
-  const [formState, setFormState] = useState<Student>({
+  const emptyForm: Student = {
     barcode_id: "",
     student_name: "",
     year_level: "",
     department: "",
+    grade: null,
+    strand: null,
+    section: null,
     parent_email: "",
-  });
+  };
 
+  const [formState, setFormState] = useState<Student>(emptyForm);
   const [departments, setDepartments] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
+  const [strands, setStrands] = useState<any[]>([]);
+  const [sections, setSections] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (student) {
-      setFormState(student); // preload existing data (edit mode)
-    } else {
-      setFormState({
-        barcode_id: "",
-        student_name: "",
-        year_level: "",
-        department: "",
-        parent_email: "",
-      });
-    }
-  }, [student]);
+  // Normalize API response
+  const normalize = (data: any, key: string) => {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data[key])) return data[key];
+    return [];
+  };
 
-  // fetch dropdown data
+  // Fetch dropdown data
   useEffect(() => {
     fetch("http://192.168.1.13/capstone/mainsystem/backend/department_api.php")
       .then((res) => res.json())
       .then((data) =>
         setDepartments(
-          (data.departments || data || []).filter(
+          normalize(data, "departments").filter(
             (d: any) => d.department !== "ITS" && d.department !== "Teacher"
           )
         )
@@ -77,25 +79,42 @@ export function StudentFormDialog({
 
     fetch("http://192.168.1.13/capstone/mainsystem/backend/grade_api.php")
       .then((res) => res.json())
-      .then((data) => setGrades(data.grades || data || []))
+      .then((data) => setGrades(normalize(data, "grades")))
       .catch(() => setGrades([]));
+
+    fetch("http://192.168.1.13/capstone/mainsystem/backend/strand_api.php")
+      .then((res) => res.json())
+      .then((data) => setStrands(normalize(data, "strands")))
+      .catch(() => setStrands([]));
+
+    fetch("http://192.168.1.13/capstone/mainsystem/backend/section_api.php")
+      .then((res) => res.json())
+      .then((data) => setSections(normalize(data, "sections")))
+      .catch(() => setSections([]));
   }, []);
 
-  // filter grades based on department
+  // Prefill form when editing
+  useEffect(() => {
+    if (student) {
+      setFormState({
+        ...student,
+        grade: student.grade || null,
+        strand: student.strand || null,
+        section: student.section || null,
+      });
+    } else {
+      setFormState(emptyForm);
+    }
+  }, [student]);
+
+  // College programs list
+  const collegePrograms = [
+    "ABEL", "BEED", "BSA", "BSBA", "BSCE", "BSED", "BSHM", "BSIT", "BSTM",
+  ];
+
+  // Filter grades based on department
   const filteredGrades = (() => {
     if (!formState.department) return grades;
-
-    const collegePrograms = [
-      "ABEL",
-      "BEED",
-      "BSA",
-      "BSBA",
-      "BSCE",
-      "BSED",
-      "BSHM",
-      "BSIT",
-      "BSTM",
-    ];
 
     if (collegePrograms.includes(formState.department)) {
       return grades.filter((g: any) =>
@@ -114,13 +133,11 @@ export function StudentFormDialog({
     }
 
     if (formState.department === "JHS") {
-      // Correct ordering for JHS
       const order = ["Grade 7", "Grade 8", "Grade 9", "Grade 10"];
       return order
         .map((grade) =>
           grades.find(
-            (g: any) =>
-              (g.grade || g.grade_name || g.grade_level) === grade
+            (g: any) => (g.grade || g.grade_name || g.grade_level) === grade
           )
         )
         .filter(Boolean);
@@ -129,20 +146,71 @@ export function StudentFormDialog({
     return grades;
   })();
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormState((prev) => ({ ...prev, [name]: value }));
+  // Extract level key
+  const getLevelKey = (year: string) => {
+    if (!year) return "";
+    if (year.startsWith("Grade")) {
+      return year.split(" ")[1]; // Grade 7 → 7
+    }
+    if (year.includes("Year")) {
+      return year.split(" ")[0]; // 1st Year → 1st
+    }
+    return year;
+  };
+
+  // Filter strands (for SHS only)
+  const filteredStrands = (() => {
+    if (formState.department !== "SHS" || !formState.year_level) return [];
+    const key = getLevelKey(formState.year_level);
+    return strands.filter((s: any) => s.strand.startsWith(key));
+  })();
+
+  // Filter sections (for JHS + College)
+  const filteredSections = (() => {
+    if (
+      !(formState.department === "JHS" ||
+        collegePrograms.includes(formState.department))
+    ) {
+      return [];
+    }
+    if (!formState.year_level) return [];
+    const key = getLevelKey(formState.year_level);
+    return sections.filter((s: any) => s.section.startsWith(key));
+  })();
+
+  // Handle input/select changes
+  const handleChange = (key: string, value: any) => {
+    setFormState((prev) => {
+      let updated = { ...prev, [key]: value };
+
+      if (key === "department") {
+        updated = { ...updated, year_level: "", grade: null, strand: null, section: null };
+      }
+      if (key === "year_level") {
+        updated = { ...updated, strand: null, section: null };
+      }
+      return updated;
+    });
+  };
+
+  // Convert empty values to null before saving
+  const prepareData = (data: Student): Student => {
+    return {
+      ...data,
+      grade: data.year_level || null,
+      strand: data.strand || null,
+      section: data.section || null,
+    };
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(prepareData(formState));
+    if (!student) setFormState(emptyForm);
   };
 
   const outlineClass =
     "border-[2.5px] border-[#3E1F0F] rounded-xl focus:border-[#3E1F0F] focus:ring-2 focus:ring-[#C9A27E] h-12 px-4 shadow-sm transition-all duration-200";
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formState);
-  };
 
   return (
     <DialogContent
@@ -156,16 +224,14 @@ export function StudentFormDialog({
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-8 py-6">
-        {/* Barcode ID (Read-only when editing) */}
+        {/* Barcode ID */}
         <div className="flex flex-col gap-2">
-          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
-            Barcode ID
-          </Label>
+          <Label>Barcode ID</Label>
           <Input
             id="barcode_id"
             name="barcode_id"
             value={formState.barcode_id}
-            onChange={handleChange}
+            onChange={(e) => handleChange("barcode_id", e.target.value)}
             required
             disabled={!!student}
             className={`${outlineClass} ${
@@ -174,16 +240,14 @@ export function StudentFormDialog({
           />
         </div>
 
-        {/* Full Name */}
+        {/* Student Name */}
         <div className="flex flex-col gap-2">
-          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
-            Full Name
-          </Label>
+          <Label>Full Name</Label>
           <Input
             id="student_name"
             name="student_name"
             value={formState.student_name}
-            onChange={handleChange}
+            onChange={(e) => handleChange("student_name", e.target.value)}
             required
             className={outlineClass}
           />
@@ -191,20 +255,10 @@ export function StudentFormDialog({
 
         {/* Department */}
         <div className="flex flex-col gap-2">
-          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
-            Department
-          </Label>
+          <Label>Department</Label>
           <Select
             value={formState.department}
-            onValueChange={(value) => {
-              // Only reset year_level if department actually changes
-              setFormState((prev) => ({
-                ...prev,
-                department: value,
-                year_level:
-                  prev.department === value ? prev.year_level : "",
-              }));
-            }}
+            onValueChange={(val) => handleChange("department", val)}
           >
             <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select department" />
@@ -221,14 +275,10 @@ export function StudentFormDialog({
 
         {/* Year Level */}
         <div className="flex flex-col gap-2">
-          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
-            Year Level
-          </Label>
+          <Label>Year Level</Label>
           <Select
             value={formState.year_level}
-            onValueChange={(value) =>
-              setFormState({ ...formState, year_level: value })
-            }
+            onValueChange={(val) => handleChange("year_level", val)}
           >
             <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select year level" />
@@ -246,47 +296,79 @@ export function StudentFormDialog({
           </Select>
         </div>
 
-        {/* Parent Email - Full Width */}
+        {/* Strand - only for SHS */}
+        {formState.department === "SHS" &&
+          ["Grade 11", "Grade 12"].includes(formState.year_level) && (
+            <div className="flex flex-col gap-2">
+              <Label>Strand</Label>
+              <Select
+                value={formState.strand || ""}
+                onValueChange={(val) => handleChange("strand", val)}
+              >
+                <SelectTrigger className={outlineClass}>
+                  <SelectValue placeholder="Select strand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredStrands.map((s: any) => (
+                    <SelectItem key={s.id} value={s.strand}>
+                      {s.strand}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+        {/* Section - only for JHS + College */}
+        {(formState.department === "JHS" ||
+          collegePrograms.includes(formState.department)) && (
+          <div className="flex flex-col gap-2">
+            <Label>Section</Label>
+            <Select
+              value={formState.section || ""}
+              onValueChange={(val) => handleChange("section", val)}
+            >
+              <SelectTrigger className={outlineClass}>
+                <SelectValue placeholder="Select section" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredSections.map((s: any) => (
+                  <SelectItem key={s.id} value={s.section}>
+                    {s.section}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Parent Email */}
         <div className="flex flex-col gap-2 col-span-2">
-          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
-            Parent Email
-          </Label>
+          <Label>Parent Email</Label>
           <Input
             id="parent_email"
             name="parent_email"
             type="email"
             value={formState.parent_email}
-            onChange={handleChange}
+            onChange={(e) => handleChange("parent_email", e.target.value)}
             required
             className={outlineClass}
           />
         </div>
 
-        {/* Buttons - Full Width */}
+        {/* Buttons */}
         <DialogFooter className="col-span-2 mt-8 flex justify-end gap-4 border-t border-[#E5D3C6] pt-6">
           <Button
             type="button"
             variant="outline"
-            className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white 
-            hover:bg-[#5C3A21] hover:text-white rounded-xl px-6 py-2 font-semibold transition-all duration-200 shadow-sm"
             onClick={() => {
-              setFormState({
-                barcode_id: "",
-                student_name: "",
-                year_level: "",
-                department: "",
-                parent_email: "",
-              });
+              setFormState(emptyForm);
               onClose();
             }}
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] 
-            rounded-xl px-6 py-2 font-semibold transition-all duration-200 shadow-md"
-          >
+          <Button type="submit">
             {student ? "Save Changes" : "Add Student"}
           </Button>
         </DialogFooter>

@@ -1,7 +1,7 @@
 // src/components/attendance/MainAttendanceScreen.tsx
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import rccSeal from "@/assets/rcc.seal.png";
+import rccSeal from "@/assets/trac-seal.png";
 import collegeBg from "@/assets/Our-Lady-of-Lourdes-Building.jpg";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
