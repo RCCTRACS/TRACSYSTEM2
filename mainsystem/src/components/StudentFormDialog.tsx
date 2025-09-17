@@ -165,15 +165,9 @@ export function StudentFormDialog({
     return strands.filter((s: any) => s.strand.startsWith(key));
   })();
 
-  // Filter sections (for JHS + College)
+  // Filter sections (for JHS only)
   const filteredSections = (() => {
-    if (
-      !(formState.department === "JHS" ||
-        collegePrograms.includes(formState.department))
-    ) {
-      return [];
-    }
-    if (!formState.year_level) return [];
+    if (formState.department !== "JHS" || !formState.year_level) return [];
     const key = getLevelKey(formState.year_level);
     return sections.filter((s: any) => s.section.startsWith(key));
   })();
@@ -319,9 +313,8 @@ export function StudentFormDialog({
             </div>
           )}
 
-        {/* Section - only for JHS + College */}
-        {(formState.department === "JHS" ||
-          collegePrograms.includes(formState.department)) && (
+        {/* Section - only for JHS */}
+        {formState.department === "JHS" && (
           <div className="flex flex-col gap-2">
             <Label>Section</Label>
             <Select

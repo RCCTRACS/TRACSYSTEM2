@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-  SelectItem
+  SelectItem,
 } from "@/components/ui/select";
 
 interface FilterStudentDialogProps {
@@ -27,7 +27,7 @@ interface FilterStudentDialogProps {
 
 export function FilterStudentDialog({
   onFilter,
-  onClose
+  onClose,
 }: FilterStudentDialogProps) {
   const [departments, setDepartments] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
@@ -39,12 +39,14 @@ export function FilterStudentDialog({
   const [selectedStrand, setSelectedStrand] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
+  // --- Normalize API data ---
   const normalize = (data: any, key: string) => {
     if (Array.isArray(data)) return data;
     if (data && Array.isArray(data[key])) return data[key];
     return [];
   };
 
+  // --- Fetch dropdown data ---
   useEffect(() => {
     fetch("http://192.168.1.13/capstone/mainsystem/backend/department_api.php")
       .then((res) => res.json())
@@ -75,16 +77,24 @@ export function FilterStudentDialog({
 
   // --- College programs list ---
   const collegePrograms = [
-    "ABEL","BEED","BSA","BSBA","BSCE","BSED","BSHM","BSIT","BSTM"
+    "ABEL",
+    "BEED",
+    "BSA",
+    "BSBA",
+    "BSCE",
+    "BSED",
+    "BSHM",
+    "BSIT",
+    "BSTM",
   ];
 
-  // --- Filter Grades ---
+  // --- Filter Grades by Department ---
   const filteredGrades = (() => {
     if (!selectedDept) return grades;
 
     if (collegePrograms.includes(selectedDept)) {
       return grades.filter((g) =>
-        ["1st Year","2nd Year","3rd Year","4th Year"].includes(
+        ["1st Year", "2nd Year", "3rd Year", "4th Year"].includes(
           g.grade || g.grade_name || g.grade_level
         )
       );
@@ -92,14 +102,14 @@ export function FilterStudentDialog({
 
     if (selectedDept === "SHS") {
       return grades.filter((g) =>
-        ["Grade 11","Grade 12"].includes(
+        ["Grade 11", "Grade 12"].includes(
           g.grade || g.grade_name || g.grade_level
         )
       );
     }
 
     if (selectedDept === "JHS") {
-      const order = ["Grade 7","Grade 8","Grade 9","Grade 10"];
+      const order = ["Grade 7", "Grade 8", "Grade 9", "Grade 10"];
       return order
         .map((grade) =>
           grades.find(
@@ -115,8 +125,8 @@ export function FilterStudentDialog({
   // --- Extract year/grade key ---
   const getLevelKey = (year: string) => {
     if (!year) return "";
-    if (year.startsWith("Grade")) return year.split(" ")[1]; // e.g. "Grade 7" -> "7"
-    if (year.includes("Year")) return year.split(" ")[0]; // e.g. "1st Year" -> "1st"
+    if (year.startsWith("Grade")) return year.split(" ")[1]; // "Grade 7" -> "7"
+    if (year.includes("Year")) return year.split(" ")[0]; // "1st Year" -> "1st"
     return year;
   };
 
@@ -127,13 +137,9 @@ export function FilterStudentDialog({
     return strands.filter((s: any) => s.strand.startsWith(key));
   })();
 
-  // --- Filter Sections (JHS + College) ---
+  // --- Filter Sections (JHS only) ---
   const filteredSections = (() => {
-    if (
-      !(selectedDept === "JHS" || collegePrograms.includes(selectedDept))
-    ) {
-      return [];
-    }
+    if (selectedDept !== "JHS") return [];
     if (!selectedGrade) return [];
     const key = getLevelKey(selectedGrade);
     return sections.filter((s: any) => s.section.startsWith(key));
@@ -230,7 +236,7 @@ export function FilterStudentDialog({
 
         {/* Strand (SHS only) */}
         {selectedDept === "SHS" &&
-          ["Grade 11","Grade 12"].includes(selectedGrade ?? "") && (
+          ["Grade 11", "Grade 12"].includes(selectedGrade ?? "") && (
             <div>
               <p className="mb-1 text-sm font-medium">Strand</p>
               <Select
@@ -251,9 +257,8 @@ export function FilterStudentDialog({
             </div>
           )}
 
-        {/* Section (JHS + College) */}
-        {(selectedDept === "JHS" ||
-          collegePrograms.includes(selectedDept ?? "")) && (
+        {/* Section (JHS only) */}
+        {selectedDept === "JHS" && (
           <div>
             <p className="mb-1 text-sm font-medium">Section</p>
             <Select
