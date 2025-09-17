@@ -1,37 +1,91 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, useEffect } from "react";
 import { Dialog } from "@/components/ui/dialog";
-import { UserFormDialog } from "./UserFormDialog"; // make sure this path is correct
+import { UserFormDialog, User } from "./UserFormDialog"; // Adjust path
+import { useNavigate } from "react-router-dom";
 
 interface Teacher {
+  id?: string;
   name: string;
   email: string;
+  department?: string;
+  level?: string;
+  role?: "Admin" | "Teacher";
+  status?: "Active" | "Inactive";
 }
 
-interface TracHeaderProps {
-  teacher: Teacher | null;
-}
+const API_URL_USERS =
+  "http://192.168.1.13/capstone/mainsystem/backend/users_api.php";
 
-const TracHeader = ({ teacher }: TracHeaderProps) => {
+const TracHeader = () => {
+  const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: teacher?.name || "",
-    email: teacher?.email || "",
-    department: "",
-    access: "",
-    password: "",
-  });
+  const navigate = useNavigate();
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  // ✅ Fetch current user from backend
+  useEffect(() => {
+    const userId = localStorage.getItem("authUserId") || sessionStorage.getItem("authUserId");
+    if (!userId) return;
+
+    fetch(API_URL_USERS)
+      .then(res => res.json())
+      .then(data => {
+        const usersList = Array.isArray(data.users) ? data.users : [];
+        const currentUser = usersList.find((u: any) => u.id === userId);
+        if (currentUser) {
+          setTeacher({
+            id: currentUser.id,
+            name: `${currentUser.first_name} ${currentUser.last_name}`.trim(),
+            email: currentUser.email,
+            department: currentUser.department,
+            level: currentUser.level,
+            role: currentUser.role,
+            status: currentUser.status,
+          });
+        }
+      })
+      .catch(err => console.error("Failed to fetch current user:", err));
+  }, []);
+
+  // ✅ Convert Teacher → User for form prefill
+  const mapTeacherToUser = (t: Teacher | null): User | null => {
+    if (!t) return null;
+    const [first_name, ...rest] = (t.name || "").split(" ");
+    return {
+      id: t.id || "0",
+      first_name: first_name ?? "",
+      last_name: rest.join(" ") || "",
+      email: t.email,
+      department: t.department ?? "",
+      level: t.level ?? "",
+      role: t.role ?? "Teacher",
+      status: t.status ?? "Active",
+    };
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Updated user data:", formData);
+  // ✅ Handle profile save
+  const handleProfileSave = (updated: Partial<User>) => {
+    const fullName = `${updated.first_name ?? ""} ${updated.last_name ?? ""}`.trim();
+    setTeacher(prev => ({
+      ...prev,
+      id: updated.id ?? prev?.id ?? "0",
+      name: fullName,
+      email: updated.email ?? prev?.email ?? "",
+      department: updated.department ?? prev?.department,
+      level: updated.level ?? prev?.level,
+      role: updated.role ?? prev?.role,
+      status: updated.status ?? prev?.status,
+    }));
     setIsProfileOpen(false);
+  };
+
+  // ✅ Handle logout
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.removeItem("sidebarHasAnimated");
+    navigate("/"); // redirect to login/home
   };
 
   return (
@@ -47,7 +101,7 @@ const TracHeader = ({ teacher }: TracHeaderProps) => {
         {/* Profile dropdown */}
         <div
           className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
-          onClick={() => setDropdownOpen((prev) => !prev)}
+          onClick={() => setDropdownOpen(prev => !prev)}
         >
           <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
           <span className="text-black text-sm font-medium">
@@ -69,12 +123,7 @@ const TracHeader = ({ teacher }: TracHeaderProps) => {
             </div>
             <div
               className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
-              onClick={() => {
-                localStorage.clear();
-                sessionStorage.removeItem("sidebarHasAnimated");
-                setDropdownOpen(false);
-                window.location.href = "/";
-              }}
+              onClick={handleLogout}
             >
               Logout
             </div>
@@ -84,8 +133,8 @@ const TracHeader = ({ teacher }: TracHeaderProps) => {
         {/* Edit Profile Modal */}
         <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
           <UserFormDialog
-            user={teacher as any}
-            onSave={() => setIsProfileOpen(false)}
+            user={mapTeacherToUser(teacher)}
+            onSave={handleProfileSave}
             onClose={() => setIsProfileOpen(false)}
             isProfile
           />

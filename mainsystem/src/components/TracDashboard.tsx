@@ -139,14 +139,7 @@ const TracDashboard = ({ teacherEmail }: TracDashboardProps) => {
                     className="bg-card border border-border flex flex-col justify-center opacity-50"
                   >
                     <CardContent className="p-8 text-center flex-1 flex items-center justify-center">
-                      <div className="space-y-3">
-                        <h3 className="text-2xl font-bold text-muted-foreground">
-                          Course {subjects.length + idx + 1}
-                        </h3>
-                        <p className="text-lg text-muted-foreground">
-                          Available Soon
-                        </p>
-                      </div>
+                    
                     </CardContent>
                   </Card>
                 ))}

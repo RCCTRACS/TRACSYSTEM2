@@ -34,13 +34,18 @@ interface UserFormDialogProps {
   user: User | null;
   onSave: (user: Partial<User>) => void;
   onClose: () => void;
-  isProfile?: boolean; // Add isProfile prop
+  isProfile?: boolean; // profile mode disables some fields
 }
 
 const API_URL =
   "http://192.168.1.13/capstone/mainsystem/backend/users_api.php";
 
-export function UserFormDialog({ user, onSave, onClose, isProfile }: UserFormDialogProps) {
+export function UserFormDialog({
+  user,
+  onSave,
+  onClose,
+  isProfile,
+}: UserFormDialogProps) {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -54,6 +59,7 @@ export function UserFormDialog({ user, onSave, onClose, isProfile }: UserFormDia
 
   const [departments, setDepartments] = useState<string[]>(["ITS", "Teacher"]);
 
+  // ✅ Pre-fill form if editing
   useEffect(() => {
     if (user) {
       setFormData({
@@ -80,6 +86,7 @@ export function UserFormDialog({ user, onSave, onClose, isProfile }: UserFormDia
     }
   }, [user]);
 
+  // ✅ Load departments from API
   useEffect(() => {
     const loadDepartments = async () => {
       try {
@@ -93,7 +100,7 @@ export function UserFormDialog({ user, onSave, onClose, isProfile }: UserFormDia
           setDepartments(unique);
         }
       } catch {
-        // ignore fallback
+        // fallback silently
       }
     };
     loadDepartments();
@@ -103,17 +110,23 @@ export function UserFormDialog({ user, onSave, onClose, isProfile }: UserFormDia
   const outlineClass =
     "border-[2.5px] border-[#3E1F0F] rounded-xl focus:border-[#3E1F0F] focus:ring-2 focus:ring-[#C9A27E] h-12 px-4 shadow-sm transition-all duration-200";
 
+  // ✅ Handle save
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const payload: any = { ...formData };
+
+    // If editing and password left blank → don’t send
     if (user && !formData.password) delete payload.password;
+
+    // ✅ Always ensure we have a user ID for PUT
+    const userId = user?.id || localStorage.getItem("authId");
 
     try {
       const response = await fetch(API_URL, {
         method: user ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(user ? { id: user.id, ...payload } : payload),
+        body: JSON.stringify(user ? { id: userId, ...payload } : payload),
       });
 
       const result = await response.json();
@@ -122,7 +135,7 @@ export function UserFormDialog({ user, onSave, onClose, isProfile }: UserFormDia
         const savedUser: Partial<User> =
           result.user ??
           (user
-            ? { id: user.id, ...payload }
+            ? { id: userId ?? "", ...payload }
             : { ...payload, id: String(result.id ?? "") });
 
         onSave(savedUser);
@@ -255,7 +268,7 @@ export function UserFormDialog({ user, onSave, onClose, isProfile }: UserFormDia
             onValueChange={(value) =>
               setFormData({ ...formData, role: value as "Admin" | "Teacher" })
             }
-            disabled={isProfile} // Disable if isProfile
+            disabled={isProfile} // disable in profile edit
           >
             <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select role" />
@@ -291,7 +304,7 @@ export function UserFormDialog({ user, onSave, onClose, isProfile }: UserFormDia
           </Select>
         </div>
 
-        {/* Password - full width */}
+        {/* Password */}
         <div className="flex flex-col gap-2 col-span-2">
           <Label className="font-semibold text-[#3E1F0F] tracking-wide">
             Password

@@ -40,8 +40,8 @@ const itemVariants: Variants = {
 const TracSidebar: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const menuItems: MenuItem[] = [
     { src: "/Dashboard.png", label: "Teacher Dashboard", url: "/teacher-dashboard" },
-    { src: "/attendance.png", label: "Attendance Management", url: "/teacher-attendance" },
-    { src: "/student.png", label: "Student Management", url: "/teacher-students" },
+    // { src: "/attendance.png", label: "Attendance Management", url: "/teacher-attendance" },
+    // { src: "/student.png", label: "Student Management", url: "/teacher-students" },
   ];
 
   const location = useLocation();

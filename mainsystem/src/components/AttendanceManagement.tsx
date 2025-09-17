@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Pencil, Download, Filter, Trash2, User } from "lucide-react";
+import { Pencil, Download, Filter, Trash2 } from "lucide-react";
 import { ManualAttendanceDialog } from "./ManualInput";
 import { FilterAttendanceDialog } from "./FilterAttendanceDialog";
 import { AttendanceFormDialog } from "./AttendanceFormDialog";
@@ -23,14 +23,18 @@ export interface Attendance {
 
 const API_URL =
   "http://192.168.1.13/capstone/mainsystem/backend/attendance_api.php";
+const USERS_API =
+  "http://192.168.1.13/capstone/mainsystem/backend/users_api.php";
 
 export function AttendanceManagement() {
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   const [filters, setFilters] = useState({
     name: "",
     yearLevel: "",
@@ -39,26 +43,47 @@ export function AttendanceManagement() {
     timeOut: "",
     status: ""
   });
+
   const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(
     null
   );
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  const [currentDateTime, setCurrentDateTime] = useState<string>("");
+
+  // --- Styling for outline button ---
+  const outlineDarkBrownBtn =
+    "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
+
+  // --- Update current date & time every second ---
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const formatted = now.toLocaleString("en-US", {
+        dateStyle: "full",
+        timeStyle: "medium"
+      });
+      setCurrentDateTime(formatted);
+    };
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // --- Fetch current user ---
   useEffect(() => {
     const userId = localStorage.getItem("authUserId");
     if (userId) {
-      fetch("http://192.168.1.13/capstone/mainsystem/backend/users_api.php")
+      fetch(USERS_API)
         .then((res) => res.json())
         .then((data) => {
           const list = data?.users ?? (Array.isArray(data) ? data : []);
           const user = list.find((u: any) => u.id === userId);
           setCurrentUser(user ?? null);
-        });
+        })
+        .catch(() => setCurrentUser(null));
     }
   }, []);
-
-  const outlineDarkBrownBtn =
-    "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
   // --- Fetch attendances ---
   const fetchAttendances = async () => {
@@ -96,7 +121,7 @@ export function AttendanceManagement() {
     fetchAttendances();
   }, []);
 
-  // --- Add attendance (Manual Input) ---
+  // --- Add attendance ---
   const handleAddAttendance = async (barcodeId: string, timeIn: string) => {
     try {
       let formattedTime = timeIn;
@@ -173,9 +198,7 @@ export function AttendanceManagement() {
     const csvRows = attendances
       .map(
         (a) =>
-          `${a.id},${a.barcodeId},${a.studentName},${a.yearLevel},${
-            a.department
-          },${a.timeIn},${a.timeOut ?? "-"},${a.status}`
+          `${a.id},${a.barcodeId},${a.studentName},${a.yearLevel},${a.department},${a.timeIn},${a.timeOut ?? "-"},${a.status}`
       )
       .join("\n");
     const blob = new Blob([csvHeader + csvRows], {
@@ -323,7 +346,14 @@ export function AttendanceManagement() {
 
       {/* Attendance List */}
       <Card className="border-2 border-[#5C4033] rounded-lg shadow-sm">
-        <CardHeader />
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-semibold text-black">
+              Attendance Records
+            </h3>
+            <p className="text-lg font-bold text-black">{currentDateTime}</p>
+          </div>
+        </CardHeader>
         <CardContent>
           {/* Header Row */}
           <div className="grid grid-cols-9 gap-x-4 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
