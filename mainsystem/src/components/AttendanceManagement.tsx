@@ -1,22 +1,14 @@
-// AttendanceManagement.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Pencil, Download, Filter, Trash2, User } from "lucide-react";
+import { Pencil, Download, Filter, Trash2 } from "lucide-react";
 import { ManualAttendanceDialog } from "./ManualInput";
 import { FilterAttendanceDialog } from "./FilterAttendanceDialog";
-import { AttendanceFormDialog } from "./AttendanceFormDialog"; // ✅ delete-only dialog
+import { AttendanceFormDialog } from "./AttendanceFormDialog";
+import { UserFormDialog } from "./UserFormDialog";
 
 export interface Attendance {
   id: string;
@@ -30,14 +22,19 @@ export interface Attendance {
 }
 
 const API_URL =
-  "http://192.168.0.137/capstone/mainsystem/backend/attendance_api.php";
+  "http://192.168.0.143/capstone/mainsystem/backend/attendance_api.php";
+const USERS_API =
+  "http://192.168.0.143/capstone/mainsystem/backend/users_api.php";
 
 export function AttendanceManagement() {
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   const [filters, setFilters] = useState({
     name: "",
     yearLevel: "",
@@ -47,10 +44,48 @@ export function AttendanceManagement() {
     status: ""
   });
 
+  const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(
+    null
+  );
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const [currentDateTime, setCurrentDateTime] = useState<string>("");
+
+  // --- Styling for outline button ---
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
-  // ✅ Fetch attendances
+  // --- Update current date & time every second ---
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const formatted = now.toLocaleString("en-US", {
+        dateStyle: "full",
+        timeStyle: "medium"
+      });
+      setCurrentDateTime(formatted);
+    };
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // --- Fetch current user ---
+  useEffect(() => {
+    const userId = localStorage.getItem("authUserId");
+    if (userId) {
+      fetch(USERS_API)
+        .then((res) => res.json())
+        .then((data) => {
+          const list = data?.users ?? (Array.isArray(data) ? data : []);
+          const user = list.find((u: any) => u.id === userId);
+          setCurrentUser(user ?? null);
+        })
+        .catch(() => setCurrentUser(null));
+    }
+  }, []);
+
+  // --- Fetch attendances ---
   const fetchAttendances = async () => {
     try {
       const res = await fetch(API_URL);
@@ -86,7 +121,7 @@ export function AttendanceManagement() {
     fetchAttendances();
   }, []);
 
-  // ✅ Add attendance (Manual Input)
+  // --- Add attendance ---
   const handleAddAttendance = async (barcodeId: string, timeIn: string) => {
     try {
       let formattedTime = timeIn;
@@ -127,7 +162,7 @@ export function AttendanceManagement() {
     }
   };
 
-  // ✅ Delete attendance
+  // --- Delete attendance ---
   const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`${API_URL}?id=${id}`, {
@@ -156,7 +191,7 @@ export function AttendanceManagement() {
     }
   };
 
-  // ✅ Export CSV
+  // --- Export CSV ---
   const handleExport = () => {
     const csvHeader =
       "ID,Barcode ID,Name,Year Level,Department,Time In,Time Out,Status\n";
@@ -179,7 +214,7 @@ export function AttendanceManagement() {
     document.body.removeChild(link);
   };
 
-  // ✅ Filter attendances
+  // --- Filter attendances ---
   const filteredAttendances = attendances.filter((a) => {
     return (
       (!filters.name ||
@@ -210,16 +245,60 @@ export function AttendanceManagement() {
             Attendance Management
           </h2>
         </div>
-        <Button
-          className={`${outlineDarkBrownBtn} flex items-center gap-2 rounded-full px-4 py-2`}
-        >
-          <User className="h-6 w-6 text-black" />
-          Admin
-        </Button>
+
+        {/* Profile dropdown */}
+        <div className="relative">
+          <div
+            className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
+            onClick={() => setDropdownOpen((prev) => !prev)}
+          >
+            <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
+            <span className="text-black text-sm font-medium">
+              {currentUser ? `${currentUser.first_name}` : "User"}
+            </span>
+            <span className="ml-2 text-xs">▼</span>
+          </div>
+
+          {dropdownOpen && (
+            <div className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10">
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  setIsProfileOpen(true);
+                  setDropdownOpen(false);
+                }}
+              >
+                Edit Profile
+              </div>
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  localStorage.clear();
+                  sessionStorage.removeItem("sidebarHasAnimated");
+                  setDropdownOpen(false);
+                  window.location.href = "/";
+                }}
+              >
+                Logout
+              </div>
+            </div>
+          )}
+
+          {/* Edit Profile Modal */}
+          <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <UserFormDialog
+              user={currentUser as any}
+              onSave={() => setIsProfileOpen(false)}
+              onClose={() => setIsProfileOpen(false)}
+              isProfile
+            />
+          </Dialog>
+        </div>
       </div>
 
       {/* Actions */}
       <div className="flex justify-end items-center gap-2">
+        {/* Manual Input */}
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button className={outlineDarkBrownBtn}>
@@ -227,18 +306,22 @@ export function AttendanceManagement() {
               Manual Input
             </Button>
           </DialogTrigger>
-          <ManualAttendanceDialog
-            open={isAddOpen}
-            onClose={() => setIsAddOpen(false)}
-            onAdd={handleAddAttendance}
-          />
+          {isAddOpen && (
+            <ManualAttendanceDialog
+              open={isAddOpen}
+              onClose={() => setIsAddOpen(false)}
+              onAdd={handleAddAttendance}
+            />
+          )}
         </Dialog>
 
+        {/* Export */}
         <Button className={outlineDarkBrownBtn} onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
 
+        {/* Filter */}
         <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <DialogTrigger asChild>
             <Button className={outlineDarkBrownBtn}>
@@ -246,83 +329,87 @@ export function AttendanceManagement() {
               Filter
             </Button>
           </DialogTrigger>
-          <FilterAttendanceDialog
-            open={isFilterOpen}
-            onClose={() => setIsFilterOpen(false)}
-            onFilter={(status) => {
-              if (status === "All") {
-                setFilters({ ...filters, status: "" });
-              } else {
-                setFilters({ ...filters, status });
-              }
-              setIsFilterOpen(false);
-            }}
-          />
+          {isFilterOpen && (
+            <FilterAttendanceDialog
+              open={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              onFilter={(status) => {
+                if (status === "All") {
+                  setFilters({ ...filters, status: "" });
+                } else {
+                  setFilters({ ...filters, status });
+                }
+                setIsFilterOpen(false);
+              }}
+            />
+          )}
         </Dialog>
       </div>
 
-      {/* Attendance Table */}
+      {/* Attendance List */}
       <Card className="border-2 border-[#5C4033] rounded-lg shadow-sm">
-        <CardHeader></CardHeader>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-semibold text-black">
+              Attendance Records
+            </h3>
+            <p className="text-lg font-bold text-black">{currentDateTime}</p>
+          </div>
+        </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-white font-bold text-center">
-                <TableHead>ID</TableHead>
-                <TableHead>Barcode ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Year Level</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Time In</TableHead>
-                <TableHead>Time Out</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAttendances.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={9}
-                    className="text-center text-gray-500 py-6"
-                  >
-                    No attendance records
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAttendances.map((a) => (
-                  <TableRow key={a.id} className="text-center">
-                    <TableCell>{a.id}</TableCell>
-                    <TableCell>{a.barcodeId}</TableCell>
-                    <TableCell>{a.studentName}</TableCell>
-                    <TableCell>{a.yearLevel}</TableCell>
-                    <TableCell>{a.department}</TableCell>
-                    <TableCell>{formatTime(a.timeIn)}</TableCell>
-                    <TableCell>{formatTime(a.timeOut)}</TableCell>
-                    <TableCell>{a.status}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setDeleteId(a.id);
-                            setIsDeleteOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          {/* Header Row */}
+          <div className="grid grid-cols-9 gap-x-4 bg-white px-4 py-3 font-bold border-b rounded-t-lg text-center">
+            <div>ID</div>
+            <div>Barcode ID</div>
+            <div>Name</div>
+            <div>Year Level</div>
+            <div>Department</div>
+            <div>Time In</div>
+            <div>Time Out</div>
+            <div>Status</div>
+            <div></div>
+          </div>
+
+          {/* Attendance Rows */}
+          <div className="mt-2 space-y-3">
+            {filteredAttendances.length === 0 ? (
+              <div className="text-center text-gray-500 py-6">
+                No attendance records
+              </div>
+            ) : (
+              filteredAttendances.map((a) => (
+                <div
+                  key={a.id}
+                  className="grid grid-cols-9 gap-x-4 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
+                >
+                  <div>{a.id}</div>
+                  <div>{a.barcodeId}</div>
+                  <div>{a.studentName}</div>
+                  <div>{a.yearLevel}</div>
+                  <div>{a.department}</div>
+                  <div>{formatTime(a.timeIn)}</div>
+                  <div>{formatTime(a.timeOut)}</div>
+                  <div>{a.status}</div>
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setDeleteId(a.id);
+                        setIsDeleteOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* ✅ Delete Dialog */}
+      {/* Delete Attendance Dialog */}
       <AttendanceFormDialog
         open={isDeleteOpen}
         onClose={() => {

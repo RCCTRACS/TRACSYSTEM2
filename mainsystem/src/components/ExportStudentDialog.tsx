@@ -62,7 +62,8 @@ export function ExportStudentDialog({
       <div className="mt-6 flex flex-col space-y-8">
         {/* Confirmation Message */}
         <p className="text-sm text-black font-medium text-center">
-          Are you sure you want to export the student list?
+          Are you sure you want to export{" "}
+          <span className="font-semibold">{students.length}</span> students?
         </p>
 
         {/* Footer Buttons */}

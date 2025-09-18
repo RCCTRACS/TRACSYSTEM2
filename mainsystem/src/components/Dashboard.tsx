@@ -4,9 +4,11 @@ import "./Dashboard.css";
 import "@fontsource/sora/400.css";
 import "@fontsource/sora/600.css";
 import "@fontsource/sora/700.css";
+import { Dialog } from "@/components/ui/dialog";
+import { UserFormDialog } from "./UserFormDialog";
 
 const API_URL =
-  "http://192.168.0.137/capstone/mainsystem/backend/attendance_api.php";
+  "http://192.168.0.143/capstone/mainsystem/backend/attendance_api.php";
 
 interface Attendance {
   id: string;
@@ -58,8 +60,12 @@ export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState({ present: 0, late: 0, absent: 0 });
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [animate, setAnimate] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(
+    null
+  );
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dateTime, setDateTime] = useState<string>("");
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -135,6 +141,20 @@ export const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // --- Fetch current user data ---
+  useEffect(() => {
+    const userId = localStorage.getItem("authUserId");
+    if (userId) {
+      fetch("http://192.168.0.143/capstone/mainsystem/backend/users_api.php")
+        .then((res) => res.json())
+        .then((data) => {
+          const list = data?.users ?? (Array.isArray(data) ? data : []);
+          const user = list.find((u: any) => u.id === userId);
+          setCurrentUser(user ?? null);
+        });
+    }
+  }, []);
+
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 
   const handleLogout = () => {
@@ -151,29 +171,106 @@ export const Dashboard: React.FC = () => {
         <div className="trac-header">
           <div className="header-left">
             <span className="system-title">TRAC System</span>
-            <div className="welcome">Welcome, Gerwin Cando!</div>
+            <div className="welcome">
+              Welcome, {currentUser ? currentUser.first_name : "User"}!
+            </div>
           </div>
 
-          {/* Profile chip with dropdown */}
-          <div className="profile-chip-container">
-            <div className="profile-chip" onClick={toggleDropdown}>
+          {/* Profile dropdown (EXACT COPY from UserManagement) */}
+          <div
+            className="profile-chip-container"
+            style={{ position: "relative" }}
+          >
+            <div
+              className="profile-chip"
+              onClick={() => setDropdownOpen((prev) => !prev)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                background: "#f3f3f3",
+                padding: "8px 12px",
+                borderRadius: "999px",
+                border: "2px solid #5C4033",
+                cursor: "pointer"
+              }}
+            >
               <img
                 src="/user.png"
                 alt="Profile"
                 className="profile-chip-icon"
+                style={{ width: "28px", height: "28px", marginRight: "8px" }}
               />
-              <span className="profile-chip-name">Gerwin</span>
-              <span className="dropdown-arrow">▼</span>
+              <span
+                className="profile-chip-name"
+                style={{
+                  color: "#222",
+                  fontSize: "15px",
+                  fontWeight: 500
+                }}
+              >
+                {currentUser ? currentUser.first_name : "User"}
+              </span>
+              <span
+                className="dropdown-arrow"
+                style={{ marginLeft: "8px", fontSize: "13px" }}
+              >
+                ▼
+              </span>
             </div>
 
             {dropdownOpen && (
-              <div className="profile-dropdown">
-                <div className="dropdown-item">✏️ Edit Profile</div>
-                <div className="dropdown-item" onClick={handleLogout}>
-                  🚪 Logout
+              <div
+                className="profile-dropdown"
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  right: 0,
+                  marginTop: "8px",
+                  background: "#fff",
+                  border: "2px solid #5C4033",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  width: "160px",
+                  zIndex: 10
+                }}
+              >
+                <div
+                  className="dropdown-item"
+                  style={{
+                    padding: "12px 18px",
+                    cursor: "pointer",
+                    fontSize: "15px"
+                  }}
+                  onClick={() => {
+                    setIsProfileOpen(true);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  Edit Profile
+                </div>
+                <div
+                  className="dropdown-item"
+                  style={{
+                    padding: "12px 18px",
+                    cursor: "pointer",
+                    fontSize: "15px"
+                  }}
+                  onClick={handleLogout}
+                >
+                  Logout
                 </div>
               </div>
             )}
+
+            {/* Edit Profile Modal */}
+            <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+              <UserFormDialog
+                user={currentUser as any}
+                onSave={() => setIsProfileOpen(false)}
+                onClose={() => setIsProfileOpen(false)}
+                isProfile
+              />
+            </Dialog>
           </div>
         </div>
 

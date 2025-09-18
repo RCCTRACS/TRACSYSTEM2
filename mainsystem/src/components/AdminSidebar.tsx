@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 
 interface MenuItem {
@@ -11,7 +11,7 @@ interface MenuItem {
 }
 
 // Sidebar slide-in
-const sidebarVariants = {
+const sidebarVariants: Variants = {
   hidden: { opacity: 0, x: -120 },
   show: {
     opacity: 1,
@@ -20,16 +20,15 @@ const sidebarVariants = {
       type: "spring",
       stiffness: 80,
       damping: 18,
-      duration: 0.6,
       when: "beforeChildren",
       staggerChildren: 0.15,
-      delayChildren: 0.05 // ⏳ wait for logo animation before icons cascade
+      delayChildren: 0.05
     }
   }
 };
 
 // Menu item animation
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: {
     opacity: 1,
@@ -81,10 +80,11 @@ const AdminSidebar: React.FC = () => {
   }, [shouldAnimate]);
 
   return (
-    <div className="h-screen flex relative">
+    <div className="flex">
       {/* Sidebar container */}
       <motion.div
-        className="relative w-24 bg-sidebar h-screen flex flex-col items-center py-6 rounded-r-2xl shadow-lg"
+        className="fixed left-0 top-0 w-24 bg-sidebar flex flex-col items-center py-6 
+                   rounded-r-2xl shadow-lg min-h-screen z-50"
         variants={sidebarVariants}
         initial={shouldAnimate ? "hidden" : false}
         animate="show"
@@ -111,10 +111,7 @@ const AdminSidebar: React.FC = () => {
                 scale: 1,
                 opacity: 1
               }}
-              transition={{
-                duration: 1,
-                ease: "easeInOut"
-              }}
+              transition={{ duration: 1, ease: "easeInOut" }}
               className="mb-8"
             >
               <img
@@ -137,13 +134,13 @@ const AdminSidebar: React.FC = () => {
         </AnimatePresence>
 
         {/* ===== Menu items ===== */}
-        <nav className="flex flex-col space-y-4 w-full">
+        <nav className="flex flex-col space-y-4 w-full flex-1 justify-start">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.url;
             return (
               <motion.div
                 key={item.url}
-                className="relative group flex justify-center"
+                className="relative group flex justify-center z-50"
                 variants={itemVariants}
               >
                 <button
@@ -169,7 +166,7 @@ const AdminSidebar: React.FC = () => {
                   className="absolute left-full top-1/2 -translate-y-1/2 ml-3 
                     border border-[#5B3A29] text-black text-lg font-bold px-3 py-1 
                     rounded-md shadow-md whitespace-nowrap transition-opacity duration-200 bg-white 
-                    opacity-0 group-hover:opacity-100 z-50"
+                    opacity-0 group-hover:opacity-100 z-[9999]"
                 >
                   {item.label}
                 </span>
@@ -178,6 +175,9 @@ const AdminSidebar: React.FC = () => {
           })}
         </nav>
       </motion.div>
+
+      {/* Push content right so it's not under sidebar */}
+      <div className="ml-24 flex-1"></div>
     </div>
   );
 };

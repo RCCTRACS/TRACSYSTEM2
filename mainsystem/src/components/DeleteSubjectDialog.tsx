@@ -1,11 +1,7 @@
+"use client";
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { AlertTriangle } from "lucide-react";
 
 interface DeleteSubjectDialogProps {
   isOpen: boolean;
@@ -14,30 +10,41 @@ interface DeleteSubjectDialogProps {
   subjectName: string;
 }
 
-export function DeleteSubjectDialog({ isOpen, onClose, onConfirm, subjectName }: DeleteSubjectDialogProps) {
+export function DeleteSubjectDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  subjectName,
+}: DeleteSubjectDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] bg-popover">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+      <DialogContent className="sm:max-w-[480px] bg-white p-6 rounded-3xl shadow-xl border border-[#D9B99B]">
+        <DialogHeader className="flex flex-col items-center text-center space-y-3 pb-4 border-b border-[#D9B99B]/50">
+          <DialogTitle className="text-xl font-bold text-black">
             Delete Subject
           </DialogTitle>
+          <DialogDescription className="text-sm text-gray-700">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-black">{subjectName}</span>? <br />
+            This action cannot be undone.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-muted-foreground">
-            Are you sure you want to delete the subject <strong>{subjectName}</strong>? 
-            This action is irreversible.
-          </p>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={onConfirm}>
-              Delete
-            </Button>
-          </div>
-        </div>
+
+        <DialogFooter className="flex justify-end gap-3 mt-4">
+          <Button
+            variant="outline"
+            className="px-5 py-2 rounded-lg border-2 border-[#5C4033] text-[#5C4033] font-medium hover:bg-[#f5ebe2]"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="px-5 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700"
+            onClick={onConfirm}
+          >
+            Delete
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

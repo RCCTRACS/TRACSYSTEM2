@@ -39,6 +39,7 @@ export function FilterSubjectDialog({
   const [selectedStrand, setSelectedStrand] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
+  // Normalize API data
   const normalize = (data: any, key: string) => {
     if (Array.isArray(data)) return data;
     if (data && Array.isArray(data[key])) return data[key];
@@ -47,7 +48,7 @@ export function FilterSubjectDialog({
 
   // Fetch dropdown data
   useEffect(() => {
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/department_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/department_api.php")
       .then((res) => res.json())
       .then((data) =>
         setDepartments(
@@ -58,37 +59,38 @@ export function FilterSubjectDialog({
       )
       .catch(() => setDepartments([]));
 
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/grade_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/grade_api.php")
       .then((res) => res.json())
       .then((data) => setGrades(normalize(data, "grades")))
       .catch(() => setGrades([]));
 
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/strand_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/strand_api.php")
       .then((res) => res.json())
       .then((data) => setStrands(normalize(data, "strands")))
       .catch(() => setStrands([]));
 
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/section_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/section_api.php")
       .then((res) => res.json())
       .then((data) => setSections(normalize(data, "sections")))
       .catch(() => setSections([]));
   }, []);
 
-  // --- Filtering logic (copied from SubjectFormDialog) ---
+  // College programs
+  const collegePrograms = [
+    "ABEL",
+    "BEED",
+    "BSA",
+    "BSBA",
+    "BSCE",
+    "BSED",
+    "BSHM",
+    "BSIT",
+    "BSTM"
+  ];
+
+  // Filter grades by department
   const filteredGrades = (() => {
     if (!selectedDept) return grades;
-
-    const collegePrograms = [
-      "ABEL",
-      "BEED",
-      "BSA",
-      "BSBA",
-      "BSCE",
-      "BSED",
-      "BSHM",
-      "BSIT",
-      "BSTM"
-    ];
 
     if (collegePrograms.includes(selectedDept)) {
       return grades.filter((g) =>
@@ -107,20 +109,43 @@ export function FilterSubjectDialog({
     }
 
     if (selectedDept === "JHS") {
-      return grades.filter((g) =>
-        ["Grade 7", "Grade 8", "Grade 9", "Grade 10"].includes(
-          g.grade || g.grade_name || g.grade_level
+      const order = ["Grade 7", "Grade 8", "Grade 9", "Grade 10"];
+      return order
+        .map((grade) =>
+          grades.find(
+            (g) => (g.grade || g.grade_name || g.grade_level) === grade
+          )
         )
-      );
+        .filter(Boolean);
     }
 
     return grades;
   })();
 
-  const filteredStrands = selectedDept === "SHS" ? strands : [];
-  const filteredSections = selectedDept === "JHS" ? sections : [];
+  // Extract level key
+  const getLevelKey = (year: string) => {
+    if (!year) return "";
+    if (year.startsWith("Grade")) return year.split(" ")[1]; // "Grade 7" -> "7"
+    if (year.includes("Year")) return year.split(" ")[0]; // "1st Year" -> "1st"
+    return year;
+  };
 
-  // --- Apply / Reset ---
+  // Filter strands (SHS only)
+  const filteredStrands = (() => {
+    if (selectedDept !== "SHS" || !selectedGrade) return [];
+    const key = getLevelKey(selectedGrade);
+    return strands.filter((s: any) => s.strand.startsWith(key));
+  })();
+
+  // Filter sections (JHS only)
+  const filteredSections = (() => {
+    if (selectedDept !== "JHS") return [];
+    if (!selectedGrade) return [];
+    const key = getLevelKey(selectedGrade);
+    return sections.filter((s: any) => s.section.startsWith(key));
+  })();
+
+  // Apply / Reset
   const handleApplyFilter = () => {
     const normalizeVal = (val: string | null) =>
       val ? val.trim().toLowerCase() : null;
@@ -210,26 +235,27 @@ export function FilterSubjectDialog({
         )}
 
         {/* Strand (SHS only) */}
-        {selectedDept === "SHS" && (
-          <div>
-            <p className="mb-1 text-sm font-medium">Strand</p>
-            <Select
-              value={selectedStrand ?? ""}
-              onValueChange={(val) => setSelectedStrand(val || null)}
-            >
-              <SelectTrigger className={fieldStyle}>
-                <SelectValue placeholder="Select Strand" />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredStrands.map((s) => (
-                  <SelectItem key={s.id} value={s.strand}>
-                    {s.strand}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        {selectedDept === "SHS" &&
+          ["Grade 11", "Grade 12"].includes(selectedGrade ?? "") && (
+            <div>
+              <p className="mb-1 text-sm font-medium">Strand</p>
+              <Select
+                value={selectedStrand ?? ""}
+                onValueChange={(val) => setSelectedStrand(val || null)}
+              >
+                <SelectTrigger className={fieldStyle}>
+                  <SelectValue placeholder="Select Strand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredStrands.map((s) => (
+                    <SelectItem key={s.id} value={s.strand}>
+                      {s.strand}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
         {/* Section (JHS only) */}
         {selectedDept === "JHS" && (

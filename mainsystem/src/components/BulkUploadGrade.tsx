@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
+import Papa from "papaparse";
 
 interface BulkUploadGradeProps {
   onUpload: (file: File) => Promise<void> | void;
@@ -20,11 +21,23 @@ export function BulkUploadGrade({ onUpload, onClose }: BulkUploadGradeProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [preview, setPreview] = useState<any[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedFile(file);
       setError("");
+
+      // Parse CSV for preview
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          setPreview(results.data.slice(0, 10)); // Show first 10 rows
+        },
+        error: () => setPreview([]),
+      });
     }
   };
 
@@ -38,6 +51,7 @@ export function BulkUploadGrade({ onUpload, onClose }: BulkUploadGradeProps) {
       setIsUploading(true);
       await onUpload(selectedFile);
       setSelectedFile(null);
+      setPreview([]);
       onClose();
     } catch {
       setError("Upload failed. Please try again.");
@@ -70,6 +84,26 @@ export function BulkUploadGrade({ onUpload, onClose }: BulkUploadGradeProps) {
           {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
         </div>
 
+        {/* Preview */}
+        {preview.length > 0 && (
+          <div className="max-h-40 overflow-y-auto border p-3 rounded-lg bg-gray-50 text-sm shadow-inner">
+            <p className="font-semibold text-black mb-2">Preview:</p>
+            <div className="grid grid-cols-2 font-bold border-b pb-1 mb-1 text-[#3E1F0F]">
+              <span>Grade Name</span>
+              <span>Type</span>
+            </div>
+            {preview.map((g, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-2 gap-2 py-1 border-b last:border-0"
+              >
+                <span>{g.grade_name}</span>
+                <span>{g.type}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex justify-end gap-3 mt-2">
           <Button
             variant="outline"
@@ -77,6 +111,7 @@ export function BulkUploadGrade({ onUpload, onClose }: BulkUploadGradeProps) {
             onClick={() => {
               setSelectedFile(null);
               setError("");
+              setPreview([]);
               onClose();
             }}
             disabled={isUploading}

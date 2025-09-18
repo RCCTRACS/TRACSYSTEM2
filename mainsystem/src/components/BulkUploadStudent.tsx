@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useRef } from "react";
 import {
   DialogContent,
   DialogHeader,
@@ -21,29 +23,27 @@ export function BulkUploadStudent({
   onUpload
 }: BulkUploadStudentProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<Student[]>([]);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFile(e.target.files?.[0] || null);
+    const uploadedFile = e.target.files?.[0] || null;
+    setFile(uploadedFile);
     setError("");
-  };
+    setPreview([]);
 
-  const handleUpload = async () => {
-    if (!file) return;
-    setLoading(true);
-    setError("");
+    if (!uploadedFile) return;
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
-      const text = e.target?.result;
-      if (typeof text !== "string") return;
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
 
-      Papa.parse(text, {
+      Papa.parse<Student>(text, {
         header: true,
         skipEmptyLines: true,
-        complete: async (results) => {
-          const headers = results.meta.fields || [];
+        complete: (results) => {
           const expectedHeaders: (keyof Student)[] = [
             "barcode_id",
             "student_name",
@@ -51,59 +51,73 @@ export function BulkUploadStudent({
             "department",
             "parent_email"
           ];
-
+          const headers = results.meta.fields || [];
           const isValid = expectedHeaders.every((h) => headers.includes(h));
           if (!isValid) {
             setError(`CSV headers must be: ${expectedHeaders.join(", ")}`);
-            setLoading(false);
             return;
           }
 
-          const students: Student[] = results.data.map((row: any) => ({
-            barcode_id: row.barcode_id?.trim() || "",
-            student_name: row.student_name?.trim() || "",
-            year_level: row.year_level?.trim() || "",
-            department: row.department?.trim() || "",
-            parent_email: row.parent_email?.trim() || ""
-          }));
+          const parsed: Student[] = results.data.map(
+            (row: any, idx: number) => ({
+              barcode_id: row.barcode_id?.trim() || "",
+              student_name: row.student_name?.trim() || "",
+              year_level: row.year_level?.trim() || "",
+              department: row.department?.trim() || "",
+              parent_email: row.parent_email?.trim() || ""
+            })
+          );
 
-          // Save to backend one by one
-          let failed: string[] = [];
-          for (const student of students) {
-            try {
-              const res = await fetch(
-                "http://192.168.0.137/capstone/mainsystem/backend/student_api.php",
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(student)
-                }
-              );
-              const data = await res.json();
-              if (!data.success) {
-                failed.push(student.barcode_id);
-              }
-            } catch {
-              failed.push(student.barcode_id);
-            }
-          }
-
-          if (failed.length > 0) {
-            setError(`Failed to upload some records: ${failed.join(", ")}`);
-          } else {
-            onUpload(students); // update local state
-            setFile(null);
-            onClose();
-          }
-          setLoading(false);
+          setPreview(parsed);
         },
         error: (err) => {
           setError("Error parsing file: " + err.message);
-          setLoading(false);
         }
       });
     };
-    reader.readAsText(file);
+    reader.readAsText(uploadedFile);
+  };
+
+  const handleUpload = async () => {
+    if (!file || preview.length === 0) {
+      setError("No valid data to upload.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      let failed: string[] = [];
+
+      for (const student of preview) {
+        try {
+          const res = await fetch(
+            "http://192.168.0.143/capstone/mainsystem/backend/student_api.php",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(student)
+            }
+          );
+          const data = await res.json();
+          if (!data.success) failed.push(student.barcode_id);
+        } catch {
+          failed.push(student.barcode_id);
+        }
+      }
+
+      if (failed.length > 0) {
+        setError(`Failed to upload some records: ${failed.join(", ")}`);
+      } else {
+        onUpload(preview);
+        setFile(null);
+        setPreview([]);
+        onClose();
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const outlineClass =
@@ -113,11 +127,12 @@ export function BulkUploadStudent({
     <DialogContent className="sm:max-w-[500px] bg-popover p-6 rounded-xl shadow-md">
       <DialogHeader className="pb-4 border-b border-[#5C3A21]/30">
         <DialogTitle className="text-xl font-bold text-black">
-          Select a CSV file
+          Bulk Upload Students
         </DialogTitle>
       </DialogHeader>
 
       <div className="space-y-6 mt-4">
+        {/* File Input */}
         <div className="space-y-2">
           <Label className="font-bold text-black">Choose File</Label>
           <Input
@@ -125,6 +140,7 @@ export function BulkUploadStudent({
             accept=".csv"
             className={outlineClass}
             onChange={handleFileChange}
+            ref={fileInputRef}
           />
           <p className="text-xs text-muted-foreground">
             {file ? file.name : "No file chosen"}
@@ -134,13 +150,42 @@ export function BulkUploadStudent({
           )}
         </div>
 
+        {/* Preview */}
+        {preview.length > 0 && (
+          <div className="max-h-40 overflow-y-auto border p-3 rounded-lg bg-gray-50 text-sm shadow-inner">
+            <p className="font-semibold text-black mb-2">Preview:</p>
+            <div className="grid grid-cols-5 font-bold border-b pb-1 mb-1 text-[#3E1F0F]">
+              <span>Barcode ID</span>
+              <span>Student Name</span>
+              <span>Year Level</span>
+              <span>Department</span>
+              <span>Parent Email</span>
+            </div>
+            {preview.map((s, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-5 gap-2 py-1 border-b last:border-0"
+              >
+                <span>{s.barcode_id}</span>
+                <span>{s.student_name}</span>
+                <span>{s.year_level}</span>
+                <span>{s.department}</span>
+                <span>{s.parent_email}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Footer Buttons */}
         <div className="flex justify-end gap-3 mt-2">
           <Button
             variant="outline"
             className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200 rounded-lg"
             onClick={() => {
               setFile(null);
+              setPreview([]);
               setError("");
+              if (fileInputRef.current) fileInputRef.current.value = "";
               onClose();
             }}
             disabled={loading}

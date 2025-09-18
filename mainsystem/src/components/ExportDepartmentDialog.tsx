@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Department } from "./DepartmentManagement";
@@ -7,44 +9,53 @@ interface ExportDepartmentProps {
   onClose: () => void;
 }
 
-export function ExportDialog({ departments, onClose }: ExportDepartmentProps) {
+export function ExportDepartmentDialog({ departments, onClose }: ExportDepartmentProps) {
   const handleExport = () => {
     if (departments.length === 0) return;
 
-    const headers = ["ID", "Department", "Type"];
-    const csvRows = [headers.join(",")];
+    const headers = ["Department", "Type"];
+    const rows = departments.map(dep => [dep.department, dep.type]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
 
-    departments.forEach((dep) => {
-      const row = [dep.id, dep.department, dep.type];
-      csvRows.push(row.join(","));
-    });
-
-    const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", "departments_export.csv");
-    document.body.appendChild(link);
+    link.download = "departments.csv";
     link.click();
-    document.body.removeChild(link);
 
     onClose();
   };
 
   return (
-    <DialogContent className="sm:max-w-[425px]">
-      <DialogHeader>
-        <DialogTitle>Export Departments</DialogTitle>
+    <DialogContent className="sm:max-w-[500px] bg-popover p-6 rounded-xl shadow-md">
+      <DialogHeader className="pb-4">
+        <DialogTitle className="text-xl font-bold text-black">
+          Export Departments
+        </DialogTitle>
       </DialogHeader>
-      <div className="flex flex-col gap-4">
-        <p>
-          Click the button below to export the currently listed departments as a CSV file.
+
+      <div className="mt-6 flex flex-col space-y-8">
+        {/* Confirmation Message */}
+        <p className="text-sm text-black font-medium text-center">
+          Are you sure you want to export{" "}
+          <span className="font-semibold">{departments.length}</span> departments?
         </p>
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onClose}>
+
+        {/* Footer Buttons */}
+        <div className="flex justify-end gap-3 w-full mt-2">
+          <Button
+            variant="outline"
+            className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white hover:bg-[#5C3A21] hover:text-white transition-all duration-200 rounded-lg"
+            onClick={onClose}
+          >
             Cancel
           </Button>
-          <Button onClick={handleExport}>Export</Button>
+          <Button
+            className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] transition-all duration-200 rounded-lg"
+            onClick={handleExport}
+          >
+            Export
+          </Button>
         </div>
       </div>
     </DialogContent>

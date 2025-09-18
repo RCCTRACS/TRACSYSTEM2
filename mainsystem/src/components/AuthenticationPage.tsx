@@ -30,7 +30,7 @@ const AuthenticationPage: React.FC = () => {
   const sendOtp = async () => {
     try {
       const res = await fetch(
-        "http://192.168.0.137/capstone/mainsystem/backend/send_otp.php",
+        "http://192.168.0.143/capstone/mainsystem/backend/send_otp.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -94,7 +94,7 @@ const AuthenticationPage: React.FC = () => {
 
     try {
       const res = await fetch(
-        "http://192.168.0.137/capstone/mainsystem/backend/verify_otp.php",
+        "http://192.168.0.143/capstone/mainsystem/backend/verify_otp.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

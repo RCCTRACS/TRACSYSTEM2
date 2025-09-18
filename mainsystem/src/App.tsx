@@ -18,7 +18,17 @@ import SectionManagementPage from "./pages/SectionManagementPage";
 import StrandManagementPage from "./pages/StrandManagementPage";
 
 import TracDashboard from "./pages/TracDashboard"; // ✅ Teacher Dashboard
+import TeacherAttendance from "./pages/TeacherAttendance";
+import TeacherStudents from "./pages/TeacherStudents";
+
 import NotFound from "./pages/NotFound";
+
+// ✅ Layout for teacher sidebar
+import TeacherLayout from "./components/TeacherLayout";
+
+// ✅ Attendance Screens
+import AttendanceConfirmationPage from "./pages/AttendanceConfirmationPage";
+import { MainAttendanceScreen } from "./components/attendance/MainAttendanceScreen";
 
 const queryClient = new QueryClient();
 
@@ -29,14 +39,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Login & OTP Flow */}
+          {/* ================= Auth Routes ================= */}
           <Route path="/" element={<LoginPage />} />
           <Route path="/auth" element={<AuthenticationPage />} />
-          {/* Dashboards */}
-          <Route path="/dashboard" element={<DashboardPage />} /> {/* Admin */}
-          <Route path="/teacher-dashboard" element={<TracDashboard />} />{" "}
-          {/* Teacher */}
-          {/* Management Pages (Admin only) */}
+
+          {/* ================= Admin Routes ================= */}
+          <Route path="/dashboard" element={<DashboardPage />} /> {/* Admin Dashboard */}
           <Route path="/usermanagement" element={<UserManagementPage />} />
           <Route path="/subjects" element={<SubjectManagementPage />} />
           <Route path="/departments" element={<DepartmentManagementPage />} />
@@ -45,7 +53,19 @@ const App = () => (
           <Route path="/grades" element={<GradeManagementPage />} />
           <Route path="/sections" element={<SectionManagementPage />} />
           <Route path="/strands" element={<StrandManagementPage />} />
-          {/* Catch-all */}
+
+          {/* ================= Teacher Routes (with persistent sidebar) ================= */}
+          <Route element={<TeacherLayout />}>
+            <Route path="/teacher-dashboard" element={<TracDashboard />} />
+            <Route path="/teacher-attendance" element={<TeacherAttendance />} />
+            <Route path="/teacher-students" element={<TeacherStudents />} />
+          </Route>
+
+          {/* ================= Attendance Screens ================= */}
+          <Route path="/attendance" element={<MainAttendanceScreen />} />
+          <Route path="/attendance-confirmation" element={<AttendanceConfirmationPage />} />
+
+          {/* ================= Catch-all ================= */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -56,7 +56,7 @@ export function SubjectFormDialog({
 
   // Fetch dropdown data
   useEffect(() => {
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/department_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/department_api.php")
       .then((res) => res.json())
       .then((data) =>
         setDepartments(
@@ -67,12 +67,12 @@ export function SubjectFormDialog({
       )
       .catch(() => setDepartments([]));
 
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/grade_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/grade_api.php")
       .then((res) => res.json())
       .then((data) => setGrades(normalize(data, "grades")))
       .catch(() => setGrades([]));
 
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/users_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/users_api.php")
       .then((res) => res.json())
       .then((data) => {
         const users = normalize(data, "users");
@@ -80,12 +80,12 @@ export function SubjectFormDialog({
       })
       .catch(() => setInstructors([]));
 
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/strand_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/strand_api.php")
       .then((res) => res.json())
       .then((data) => setStrands(normalize(data, "strands")))
       .catch(() => setStrands([]));
 
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/section_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/section_api.php")
       .then((res) => res.json())
       .then((data) => setSections(normalize(data, "sections")))
       .catch(() => setSections([]));
@@ -198,49 +198,58 @@ export function SubjectFormDialog({
     }
   };
 
-  const fieldStyle =
-    "border-2 border-[#5C4033] rounded-md focus:ring-0 focus:border-[#5C4033]";
+  const outlineClass =
+    "border-[2.5px] border-[#3E1F0F] rounded-xl focus:border-[#3E1F0F] focus:ring-2 focus:ring-[#C9A27E] h-12 px-4 shadow-sm transition-all duration-200";
 
   return (
-    <DialogContent className="sm:max-w-[500px] rounded-2xl shadow-md">
-      <DialogHeader>
-        <DialogTitle className="text-lg font-semibold">
+    <DialogContent
+      className="sm:max-w-[1000px] bg-white 
+        p-8 rounded-3xl shadow-2xl border border-[#D9B99B] my-6"
+    >
+      <DialogHeader className="px-0 pb-6 border-b border-[#E5D3C6]">
+        <DialogTitle className="text-2xl font-extrabold text-[#3E1F0F] tracking-wide">
           {subject ? "Edit Subject" : "Add Subject"}
         </DialogTitle>
       </DialogHeader>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-6 py-6">
         {/* Subject Code */}
-        <div>
-          <Label className="mb-1 block">Subject Code</Label>
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+            Subject Code
+          </Label>
           <Input
-            className={fieldStyle}
             placeholder="e.g., CS101"
             value={formData.code}
             onChange={(e) => handleChange("code", e.target.value)}
             disabled={!!subject}
+            className={outlineClass}
           />
         </div>
 
         {/* Subject Name */}
-        <div>
-          <Label className="mb-1 block">Subject Name</Label>
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+            Subject Name
+          </Label>
           <Input
-            className={fieldStyle}
             placeholder="e.g., Intro to Computer Science"
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
+            className={outlineClass}
           />
         </div>
 
         {/* Department */}
-        <div>
-          <Label className="mb-1 block">Department</Label>
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+            Department
+          </Label>
           <Select
             value={formData.department}
             onValueChange={(val) => handleChange("department", val)}
           >
-            <SelectTrigger className={fieldStyle}>
+            <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select Department" />
             </SelectTrigger>
             <SelectContent>
@@ -254,13 +263,15 @@ export function SubjectFormDialog({
         </div>
 
         {/* Grade */}
-        <div>
-          <Label className="mb-1 block">Grade / Year</Label>
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+            Grade / Year
+          </Label>
           <Select
             value={formData.grade}
             onValueChange={(val) => handleChange("grade", val)}
           >
-            <SelectTrigger className={fieldStyle}>
+            <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select Grade" />
             </SelectTrigger>
             <SelectContent>
@@ -278,13 +289,15 @@ export function SubjectFormDialog({
 
         {/* Strand (SHS only) */}
         {formData.department === "SHS" && (
-          <div>
-            <Label className="mb-1 block">Strand</Label>
+          <div className="flex flex-col gap-2">
+            <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+              Strand
+            </Label>
             <Select
               value={formData.strand}
               onValueChange={(val) => handleChange("strand", val)}
             >
-              <SelectTrigger className={fieldStyle}>
+              <SelectTrigger className={outlineClass}>
                 <SelectValue placeholder="Select Strand" />
               </SelectTrigger>
               <SelectContent>
@@ -300,13 +313,15 @@ export function SubjectFormDialog({
 
         {/* Section (JHS only) */}
         {formData.department === "JHS" && (
-          <div>
-            <Label className="mb-1 block">Section</Label>
+          <div className="flex flex-col gap-2">
+            <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+              Section
+            </Label>
             <Select
               value={formData.section}
               onValueChange={(val) => handleChange("section", val)}
             >
-              <SelectTrigger className={fieldStyle}>
+              <SelectTrigger className={outlineClass}>
                 <SelectValue placeholder="Select Section" />
               </SelectTrigger>
               <SelectContent>
@@ -321,13 +336,15 @@ export function SubjectFormDialog({
         )}
 
         {/* Instructor */}
-        <div>
-          <Label className="mb-1 block">Instructor</Label>
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+            Instructor
+          </Label>
           <Select
             value={formData.instructor}
             onValueChange={(val) => handleChange("instructor", val)}
           >
-            <SelectTrigger className={fieldStyle}>
+            <SelectTrigger className={outlineClass}>
               <SelectValue placeholder="Select Instructor" />
             </SelectTrigger>
             <SelectContent>
@@ -341,22 +358,42 @@ export function SubjectFormDialog({
         </div>
 
         {/* Time */}
-        <div>
-          <Label className="mb-1 block">Time</Label>
+        <div className="flex flex-col gap-2">
+          <Label className="font-semibold text-[#3E1F0F] tracking-wide">
+            Time
+          </Label>
           <Input
-            className={fieldStyle}
             placeholder="e.g., 8:00 AM - 10:00 AM"
             value={formData.time}
             onChange={(e) => handleChange("time", e.target.value)}
+            className={outlineClass}
           />
         </div>
       </div>
 
-      <DialogFooter className="mt-4 flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>
+      {/* Buttons */}
+      <DialogFooter className="mt-6 flex justify-end gap-4 border-t border-[#E5D3C6] pt-6">
+        <Button
+          type="button"
+          variant="outline"
+          className="border-2 border-[#5C3A21] text-[#5C3A21] bg-white 
+            hover:bg-[#5C3A21] hover:text-white rounded-xl px-6 py-2 font-semibold transition-all duration-200 shadow-sm"
+          onClick={() => {
+            setFormData(emptyForm);
+            setInitialized(false);
+            onClose();
+          }}
+        >
           Cancel
         </Button>
-        <Button onClick={handleSubmit}>{subject ? "Update" : "Add"}</Button>
+        <Button
+          type="button"
+          className="bg-[#5C3A21] text-white hover:bg-[#3E1F0F] 
+            rounded-xl px-6 py-2 font-semibold transition-all duration-200 shadow-md"
+          onClick={handleSubmit}
+        >
+          {subject ? "Save Changes" : "Add Subject"}
+        </Button>
       </DialogFooter>
     </DialogContent>
   );

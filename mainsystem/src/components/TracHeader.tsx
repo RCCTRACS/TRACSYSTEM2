@@ -1,148 +1,150 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-} from "@/components/ui/dropdown-menu";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-import {
-  ChevronDown,
-  ChevronRight,
-  User,
-  LogOut,
-  Pencil,
-} from "lucide-react";
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+"use client";
+
+import { useState, useEffect } from "react";
+import { Dialog } from "@/components/ui/dialog";
+import { UserFormDialog, User } from "./UserFormDialog"; // Adjust path
+import { useNavigate } from "react-router-dom";
+
+interface Teacher {
+  id?: string;
+  name: string;
+  email: string;
+  department?: string;
+  level?: string;
+  role?: "Admin" | "Teacher";
+  status?: "Active" | "Inactive";
+}
+
+const API_URL_USERS =
+  "http://192.168.0.143/capstone/mainsystem/backend/users_api.php";
 
 const TracHeader = () => {
-  const [openEdit, setOpenEdit] = useState(false);
+  const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // ✅ Fetch current user from backend
+  useEffect(() => {
+    const userId =
+      localStorage.getItem("authUserId") ||
+      sessionStorage.getItem("authUserId");
+    if (!userId) return;
+
+    fetch(API_URL_USERS)
+      .then((res) => res.json())
+      .then((data) => {
+        const usersList = Array.isArray(data.users) ? data.users : [];
+        const currentUser = usersList.find((u: any) => u.id === userId);
+        if (currentUser) {
+          setTeacher({
+            id: currentUser.id,
+            name: `${currentUser.first_name} ${currentUser.last_name}`.trim(),
+            email: currentUser.email,
+            department: currentUser.department,
+            level: currentUser.level,
+            role: currentUser.role,
+            status: currentUser.status
+          });
+        }
+      })
+      .catch((err) => console.error("Failed to fetch current user:", err));
+  }, []);
+
+  // ✅ Convert Teacher → User for form prefill
+  const mapTeacherToUser = (t: Teacher | null): User | null => {
+    if (!t) return null;
+    const [first_name, ...rest] = (t.name || "").split(" ");
+    return {
+      id: t.id || "0",
+      first_name: first_name ?? "",
+      last_name: rest.join(" ") || "",
+      email: t.email,
+      department: t.department ?? "",
+      level: t.level ?? "",
+      role: t.role ?? "Teacher",
+      status: t.status ?? "Active"
+    };
+  };
+
+  // ✅ Handle profile save
+  const handleProfileSave = (updated: Partial<User>) => {
+    const fullName = `${updated.first_name ?? ""} ${
+      updated.last_name ?? ""
+    }`.trim();
+    setTeacher((prev) => ({
+      ...prev,
+      id: updated.id ?? prev?.id ?? "0",
+      name: fullName,
+      email: updated.email ?? prev?.email ?? "",
+      department: updated.department ?? prev?.department,
+      level: updated.level ?? prev?.level,
+      role: updated.role ?? prev?.role,
+      status: updated.status ?? prev?.status
+    }));
+    setIsProfileOpen(false);
+  };
+
+  // ✅ Handle logout
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.removeItem("sidebarHasAnimated");
+    navigate("/"); // redirect to login/home
+  };
 
   return (
     <header className="bg-white px-6 py-4 flex justify-between items-center">
-  <div>
-  <h1 className="text-xl font-semibold text-black">TRAC System</h1>
-  <p className="text-2xl font-bold text-black">Welcome Ms. Amyrose Arillo!</p>
-</div>
+      <div>
+        <h1 className="text-xl font-semibold text-black">TRAC System</h1>
+        {teacher && (
+          <p className="text-2xl font-bold text-black">
+            Welcome, {teacher.name}!
+          </p>
+        )}
+      </div>
 
-      <div className="flex items-center space-x-4">
-        {/* Dropdown Menu for Profile */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <div className="flex items-center space-x-2 bg-white border-4 border-primary px-4 py-2 rounded-full cursor-pointer hover:bg-gray-50 transition">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-blue-400 text-white text-sm">M</AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium">Ms. Amyrose</span>
-              <ChevronDown size={16} />
+      <div className="relative">
+        {/* Profile dropdown */}
+        <div
+          className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
+          onClick={() => setDropdownOpen((prev) => !prev)}
+        >
+          <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
+          <span className="text-black text-sm font-medium">
+            {teacher ? teacher.name : "User"}
+          </span>
+          <span className="ml-2 text-xs">▼</span>
+        </div>
+
+        {dropdownOpen && (
+          <div className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10">
+            <div
+              className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+              onClick={() => {
+                setIsProfileOpen(true);
+                setDropdownOpen(false);
+              }}
+            >
+              Edit Profile
             </div>
-          </DropdownMenuTrigger>
+            <div
+              className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+              onClick={handleLogout}
+            >
+              Logout
+            </div>
+          </div>
+        )}
 
-          <DropdownMenuContent className="w-48 mt-2">
-            {/* Profile Submenu */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <span className="flex items-center w-full">
-                  <User className="w-4 h-4 mr-2" />
-                  <span className="flex-grow">Profile</span>
-                 
-                </span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => setOpenEdit(true)}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Edit User
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            {/* Logout */}
-            <DropdownMenuItem>
-              <LogOut className="w-4 h-4 mr-2" />
-              Log Out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Modal for Edit User */}
-<Dialog open={openEdit} onOpenChange={setOpenEdit}>
-  <DialogContent className="sm:max-w-[500px]">
-    <DialogHeader>
-      <DialogTitle>Edit User</DialogTitle>
-    </DialogHeader>
-    <form className="space-y-4 mt-4">
-      {/* Name */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Name</label>
-        <input
-          type="text"
-          className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-        />
-      </div>
-
-      {/* Email */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Email</label>
-        <input
-          type="email"
-          className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-        />
-      </div>
-
-      {/* Department */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Department</label>
-        <input
-          type="text"
-          className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-        />
-      </div>
-
-      {/* Access */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Access</label>
-        <input
-          type="text"
-          className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-        />
-      </div>
-
-      {/* Password */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Password</label>
-        <input
-          type="password"
-          className="mt-1 block w-full rounded-md border-2 border-brown-500 shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-          defaultValue=""
-        />
-      </div>
-
-      {/* Submit Button */}
-      <button
-        type="submit"
-        className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90"
-      >
-        Save Changes
-      </button>
-    </form>
-  </DialogContent>
-</Dialog>
-
-
-
+        {/* Edit Profile Modal */}
+        <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+          <UserFormDialog
+            user={mapTeacherToUser(teacher)}
+            onSave={handleProfileSave}
+            onClose={() => setIsProfileOpen(false)}
+            isProfile
+          />
+        </Dialog>
       </div>
     </header>
   );

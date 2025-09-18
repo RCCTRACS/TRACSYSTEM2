@@ -1,10 +1,12 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import {
   DialogContent,
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectTrigger,
@@ -14,7 +16,12 @@ import {
 } from "@/components/ui/select";
 
 interface FilterStudentDialogProps {
-  onFilter: (department: string | null, yearLevel: string | null) => void;
+  onFilter: (
+    department: string | null,
+    grade: string | null,
+    strand: string | null,
+    section: string | null
+  ) => void;
   onClose: () => void;
 }
 
@@ -22,135 +29,249 @@ export function FilterStudentDialog({
   onFilter,
   onClose
 }: FilterStudentDialogProps) {
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [yearLevels, setYearLevels] = useState<string[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [grades, setGrades] = useState<any[]>([]);
+  const [strands, setStrands] = useState<any[]>([]);
+  const [sections, setSections] = useState<any[]>([]);
 
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
+  const [selectedStrand, setSelectedStrand] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
-  // Normalize API response
+  // --- Normalize API data ---
   const normalize = (data: any, key: string) => {
-    if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (Array.isArray(data[key])) return data[key];
+    if (data && Array.isArray(data[key])) return data[key];
     return [];
   };
 
-  // Fetch departments from backend
+  // --- Fetch dropdown data ---
   useEffect(() => {
-    fetch("http://192.168.0.137/capstone/mainsystem/backend/department_api.php")
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/department_api.php")
       .then((res) => res.json())
-      .then((data) => {
-        const depts = normalize(data, "departments")
-          .map((d: any) => d.department)
-          .filter((d: string) => d !== "ITS" && d !== "Teacher");
-        setDepartments(depts);
-      })
+      .then((data) =>
+        setDepartments(
+          normalize(data, "departments").filter(
+            (d: any) => d.department !== "ITS" && d.department !== "Teacher"
+          )
+        )
+      )
       .catch(() => setDepartments([]));
+
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/grade_api.php")
+      .then((res) => res.json())
+      .then((data) => setGrades(normalize(data, "grades")))
+      .catch(() => setGrades([]));
+
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/strand_api.php")
+      .then((res) => res.json())
+      .then((data) => setStrands(normalize(data, "strands")))
+      .catch(() => setStrands([]));
+
+    fetch("http://192.168.0.143/capstone/mainsystem/backend/section_api.php")
+      .then((res) => res.json())
+      .then((data) => setSections(normalize(data, "sections")))
+      .catch(() => setSections([]));
   }, []);
 
-  // Update year levels based on selected department
-  useEffect(() => {
-    if (!selectedDept) {
-      setYearLevels([
-        "1st Year",
-        "2nd Year",
-        "3rd Year",
-        "4th Year",
-        "Grade 11",
-        "Grade 12",
-        "Grade 7",
-        "Grade 8",
-        "Grade 9",
-        "Grade 10"
-      ]);
-      return;
-    }
+  // --- College programs list ---
+  const collegePrograms = [
+    "ABEL",
+    "BEED",
+    "BSA",
+    "BSBA",
+    "BSCE",
+    "BSED",
+    "BSHM",
+    "BSIT",
+    "BSTM"
+  ];
 
-    const collegePrograms = [
-      "ABEL",
-      "BEED",
-      "BSA",
-      "BSBA",
-      "BSCE",
-      "BSED",
-      "BSHM",
-      "BSIT",
-      "BSTM"
-    ];
+  // --- Filter Grades by Department ---
+  const filteredGrades = (() => {
+    if (!selectedDept) return grades;
 
     if (collegePrograms.includes(selectedDept)) {
-      setYearLevels(["1st Year", "2nd Year", "3rd Year", "4th Year"]);
-    } else if (selectedDept === "SHS") {
-      setYearLevels(["Grade 11", "Grade 12"]);
-    } else if (selectedDept === "JHS") {
-      setYearLevels(["Grade 7", "Grade 8", "Grade 9", "Grade 10"]);
-    } else {
-      setYearLevels([]);
+      return grades.filter((g) =>
+        ["1st Year", "2nd Year", "3rd Year", "4th Year"].includes(
+          g.grade || g.grade_name || g.grade_level
+        )
+      );
     }
 
-    setSelectedYear(null); // reset year level on department change
-  }, [selectedDept]);
+    if (selectedDept === "SHS") {
+      return grades.filter((g) =>
+        ["Grade 11", "Grade 12"].includes(
+          g.grade || g.grade_name || g.grade_level
+        )
+      );
+    }
 
-  const handleApply = () => {
-    onFilter(selectedDept, selectedYear);
+    if (selectedDept === "JHS") {
+      const order = ["Grade 7", "Grade 8", "Grade 9", "Grade 10"];
+      return order
+        .map((grade) =>
+          grades.find(
+            (g) => (g.grade || g.grade_name || g.grade_level) === grade
+          )
+        )
+        .filter(Boolean);
+    }
+
+    return grades;
+  })();
+
+  // --- Extract year/grade key ---
+  const getLevelKey = (year: string) => {
+    if (!year) return "";
+    if (year.startsWith("Grade")) return year.split(" ")[1]; // "Grade 7" -> "7"
+    if (year.includes("Year")) return year.split(" ")[0]; // "1st Year" -> "1st"
+    return year;
+  };
+
+  // --- Filter Strands (SHS only) ---
+  const filteredStrands = (() => {
+    if (selectedDept !== "SHS" || !selectedGrade) return [];
+    const key = getLevelKey(selectedGrade);
+    return strands.filter((s: any) => s.strand.startsWith(key));
+  })();
+
+  // --- Filter Sections (JHS only) ---
+  const filteredSections = (() => {
+    if (selectedDept !== "JHS") return [];
+    if (!selectedGrade) return [];
+    const key = getLevelKey(selectedGrade);
+    return sections.filter((s: any) => s.section.startsWith(key));
+  })();
+
+  // --- Apply / Reset ---
+  const handleApplyFilter = () => {
+    const normalizeVal = (val: string | null) =>
+      val ? val.trim().toLowerCase() : null;
+
+    onFilter(
+      normalizeVal(selectedDept),
+      normalizeVal(selectedGrade),
+      normalizeVal(selectedStrand),
+      normalizeVal(selectedSection)
+    );
     onClose();
   };
 
-  const handleReset = () => {
+  const resetFilter = () => {
     setSelectedDept(null);
-    setSelectedYear(null);
-    onFilter(null, null);
+    setSelectedGrade(null);
+    setSelectedStrand(null);
+    setSelectedSection(null);
+    onFilter(null, null, null, null);
     onClose();
   };
 
-  const selectStyle =
+  const fieldStyle =
     "border-2 border-[#5C4033] rounded-md focus:ring-0 focus:border-[#5C4033]";
 
   return (
-    <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-[#fdfaf6] to-[#fff7f0] p-8 rounded-3xl shadow-2xl border border-[#D9B99B]">
-      <DialogHeader className="pb-4">
-        <DialogTitle className="text-2xl font-extrabold text-black text-left">
+    <DialogContent className="sm:max-w-[500px] rounded-2xl shadow-md bg-white p-6">
+      <DialogHeader>
+        <DialogTitle className="text-lg font-semibold">
           Filter Students
         </DialogTitle>
       </DialogHeader>
 
-      <div className="flex flex-col gap-6 mt-8">
-        {/* Department Select */}
+      <div className="space-y-4">
+        {/* Department */}
         <div>
-          <p className="mb-1 font-medium text-black">Department</p>
+          <p className="mb-1 text-sm font-medium">Department</p>
           <Select
             value={selectedDept ?? ""}
-            onValueChange={(val) => setSelectedDept(val || null)}
+            onValueChange={(val) => {
+              setSelectedDept(val || null);
+              setSelectedGrade(null);
+              setSelectedStrand(null);
+              setSelectedSection(null);
+            }}
           >
-            <SelectTrigger className={selectStyle}>
+            <SelectTrigger className={fieldStyle}>
               <SelectValue placeholder="Select Department" />
             </SelectTrigger>
             <SelectContent>
               {departments.map((d) => (
-                <SelectItem key={d} value={d}>
-                  {d}
+                <SelectItem key={d.id} value={d.department}>
+                  {d.department}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Year Level Select */}
-        {yearLevels.length > 0 && (
+        {/* Grade */}
+        {filteredGrades.length > 0 && (
           <div>
-            <p className="mb-1 font-medium text-black">Year Level</p>
+            <p className="mb-1 text-sm font-medium">Grade / Year</p>
             <Select
-              value={selectedYear ?? ""}
-              onValueChange={(val) => setSelectedYear(val || null)}
+              value={selectedGrade ?? ""}
+              onValueChange={(val) => {
+                setSelectedGrade(val || null);
+                setSelectedStrand(null);
+                setSelectedSection(null);
+              }}
             >
-              <SelectTrigger className={selectStyle}>
-                <SelectValue placeholder="Select Year Level" />
+              <SelectTrigger className={fieldStyle}>
+                <SelectValue placeholder="Select Grade" />
               </SelectTrigger>
               <SelectContent>
-                {yearLevels.map((y) => (
-                  <SelectItem key={y} value={y}>
-                    {y}
+                {filteredGrades.map((g) => {
+                  const val = g.grade || g.grade_name || g.grade_level || "";
+                  return (
+                    <SelectItem key={g.id} value={val}>
+                      {val}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Strand (SHS only) */}
+        {selectedDept === "SHS" &&
+          ["Grade 11", "Grade 12"].includes(selectedGrade ?? "") && (
+            <div>
+              <p className="mb-1 text-sm font-medium">Strand</p>
+              <Select
+                value={selectedStrand ?? ""}
+                onValueChange={(val) => setSelectedStrand(val || null)}
+              >
+                <SelectTrigger className={fieldStyle}>
+                  <SelectValue placeholder="Select Strand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredStrands.map((s) => (
+                    <SelectItem key={s.id} value={s.strand}>
+                      {s.strand}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+        {/* Section (JHS only) */}
+        {selectedDept === "JHS" && (
+          <div>
+            <p className="mb-1 text-sm font-medium">Section</p>
+            <Select
+              value={selectedSection ?? ""}
+              onValueChange={(val) => setSelectedSection(val || null)}
+            >
+              <SelectTrigger className={fieldStyle}>
+                <SelectValue placeholder="Select Section" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredSections.map((s) => (
+                  <SelectItem key={s.id} value={s.section}>
+                    {s.section}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -159,12 +280,12 @@ export function FilterStudentDialog({
         )}
       </div>
 
-      {/* Footer Buttons */}
-      <div className="mt-6 flex justify-end gap-3">
-        <Button variant="outline" onClick={handleReset}>
+      {/* Footer */}
+      <div className="mt-6 flex justify-end gap-2">
+        <Button variant="outline" onClick={resetFilter}>
           Show All
         </Button>
-        <Button className="bg-[#5C3A21] text-white" onClick={handleApply}>
+        <Button className="bg-[#5C3A21] text-white" onClick={handleApplyFilter}>
           Apply Filter
         </Button>
       </div>

@@ -21,6 +21,7 @@ import { DeleteSectionDialog } from "./DeleteSectionDialog";
 import { ExportSectionDialog } from "./ExportSectionDialog";
 import { FilterSectionDialog } from "./FilterSectionDialog";
 import { BulkUploadSection } from "./BulkUploadSection";
+import { UserFormDialog } from "./UserFormDialog";
 import { useNotifier } from "@/components/ToastNotifier"; // ✅ toast hook
 
 export interface Section {
@@ -30,7 +31,7 @@ export interface Section {
 }
 
 const API_URL =
-  "http://192.168.0.137/capstone/mainsystem/backend/section_api.php";
+  "http://192.168.0.143/capstone/mainsystem/backend/section_api.php";
 
 export function SectionManagement() {
   const [sections, setSections] = useState<Section[]>([]);
@@ -44,6 +45,12 @@ export function SectionManagement() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(
+    null
+  );
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const notifier = useNotifier("Section"); // ✅ toast notifier
 
@@ -65,6 +72,20 @@ export function SectionManagement() {
 
   useEffect(() => {
     fetchSections();
+  }, []);
+
+  // Fetch user info on mount
+  useEffect(() => {
+    const userId = localStorage.getItem("authUserId");
+    if (userId) {
+      fetch("http://192.168.0.143/capstone/mainsystem/backend/users_api.php")
+        .then((res) => res.json())
+        .then((data) => {
+          const list = data?.users ?? (Array.isArray(data) ? data : []);
+          const user = list.find((u: any) => u.id === userId);
+          setCurrentUser(user ?? null);
+        });
+    }
   }, []);
 
   // --- Search ---
@@ -191,12 +212,55 @@ export function SectionManagement() {
           <p className="text-sm font-normal text-black">RCC TRACS</p>
           <h2 className="text-3xl font-bold text-black">Section Management</h2>
         </div>
-        <Button
-          className={`${outlineDarkBrownBtn} flex items-center gap-2 rounded-full px-4 py-2`}
-        >
-          <FileText className="h-6 w-6 text-black" />
-          Records
-        </Button>
+
+        {/* Profile dropdown */}
+        <div className="relative">
+          <div
+            className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
+            onClick={() => setDropdownOpen((prev) => !prev)}
+          >
+            <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
+            <span className="text-black text-sm font-medium">
+              {currentUser ? `${currentUser.first_name}` : "User"}
+            </span>
+            <span className="ml-2 text-xs">▼</span>
+          </div>
+
+          {dropdownOpen && (
+            <div className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10">
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  setIsProfileOpen(true);
+                  setDropdownOpen(false);
+                }}
+              >
+                Edit Profile
+              </div>
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  localStorage.clear();
+                  sessionStorage.removeItem("sidebarHasAnimated");
+                  setDropdownOpen(false);
+                  window.location.href = "/";
+                }}
+              >
+                Logout
+              </div>
+            </div>
+          )}
+
+          {/* Edit Profile Modal */}
+          <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <UserFormDialog
+              user={currentUser as any}
+              onSave={() => setIsProfileOpen(false)}
+              onClose={() => setIsProfileOpen(false)}
+              isProfile
+            />
+          </Dialog>
+        </div>
       </div>
 
       {/* Search + Buttons */}

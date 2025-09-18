@@ -54,7 +54,8 @@ export function ExportDialog({ users, onClose }: ExportDialogProps) {
       <div className="mt-6 flex flex-col space-y-8">
         {/* Confirmation Message */}
         <p className="text-sm text-black font-medium text-center">
-          Are you sure you want to export data?
+          Are you sure you want to export{" "}
+          <span className="font-semibold">{users.length}</span> users?
         </p>
 
         {/* Footer Buttons */}

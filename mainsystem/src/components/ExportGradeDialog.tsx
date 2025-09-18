@@ -42,8 +42,32 @@ export function ExportGradeDialog({ grades, onClose }: ExportGradeDialogProps) {
       <div className="mt-6 flex flex-col space-y-8">
         {/* Confirmation Message */}
         <p className="text-sm text-black font-medium text-center">
-          Are you sure you want to export grade data?
+          Are you sure you want to export{" "}
+          <span className="font-semibold">{grades.length}</span> grades?
         </p>
+
+        {/* Preview Section */}
+        {grades.length > 0 && (
+          <div className="max-h-40 overflow-y-auto border p-3 rounded-lg bg-gray-50 text-sm shadow-inner mt-2">
+            <p className="font-semibold text-black mb-2">Preview:</p>
+            <div className="grid grid-cols-2 font-bold border-b pb-1 mb-1 text-[#3E1F0F]">
+              <span>Grade</span>
+              <span>Type</span>
+            </div>
+            {grades.slice(0, 10).map((g, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-2 gap-2 py-1 border-b last:border-0"
+              >
+                <span>{g.grade}</span>
+                <span>{g.type}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* JSON Preview */}
+        <pre className="text-xs text-gray-400">{JSON.stringify(grades, null, 2)}</pre>
 
         {/* Footer Buttons */}
         <div className="flex justify-end gap-3 w-full mt-2">

@@ -19,8 +19,9 @@ import {
 import { DepartmentFormDialog } from "./DepartmentFormDialog";
 import { DeleteDepartmentDialog } from "./DeleteDepartmentDialog";
 import { FilterDepartmentDialog } from "./FilterDepartmentDialog";
-import { ExportDialog } from "./ExportDepartmentDialog";
+import { ExportDepartmentDialog } from "./ExportDepartmentDialog";
 import { BulkUploadDepartment } from "./BulkUploadDepartment";
+import { UserFormDialog } from "./UserFormDialog";
 
 import { toast } from "sonner";
 
@@ -45,9 +46,14 @@ export function DepartmentManagement() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(
+    null
+  );
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const API_URL =
-    "http://192.168.0.137/capstone/mainsystem/backend/department_api.php";
+    "http://192.168.0.143/capstone/mainsystem/backend/department_api.php";
 
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
@@ -65,6 +71,19 @@ export function DepartmentManagement() {
 
   useEffect(() => {
     loadDepartments();
+  }, []);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("authUserId");
+    if (userId) {
+      fetch("http://192.168.0.143/capstone/mainsystem/backend/users_api.php")
+        .then((res) => res.json())
+        .then((data) => {
+          const list = data?.users ?? (Array.isArray(data) ? data : []);
+          const user = list.find((u: any) => u.id === userId);
+          setCurrentUser(user ?? null);
+        });
+    }
   }, []);
 
   // --- Search filter ---
@@ -196,12 +215,57 @@ export function DepartmentManagement() {
             Department Management
           </h2>
         </div>
-        <Button
-          className={`${outlineDarkBrownBtn} flex items-center gap-2 rounded-full px-4 py-2`}
-        >
-          <Building2 className="h-6 w-6 text-black" />
-          Admin
-        </Button>
+
+        {/* Profile dropdown */}
+        <div className="relative">
+          <div
+            className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
+            onClick={() => setDropdownOpen((prev) => !prev)}
+          >
+            <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
+            <span className="text-black text-sm font-medium">
+              {currentUser && "first_name" in currentUser
+                ? currentUser.first_name
+                : "User"}
+            </span>
+            <span className="ml-2 text-xs">▼</span>
+          </div>
+
+          {dropdownOpen && (
+            <div className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10">
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  setIsProfileOpen(true);
+                  setDropdownOpen(false);
+                }}
+              >
+                Edit Profile
+              </div>
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  localStorage.clear();
+                  sessionStorage.removeItem("sidebarHasAnimated");
+                  setDropdownOpen(false);
+                  window.location.href = "/";
+                }}
+              >
+                Logout
+              </div>
+            </div>
+          )}
+
+          {/* Edit Profile Modal */}
+          <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <UserFormDialog
+              user={currentUser as any}
+              onSave={() => setIsProfileOpen(false)}
+              onClose={() => setIsProfileOpen(false)}
+              isProfile
+            />
+          </Dialog>
+        </div>
       </div>
 
       {/* Search + Actions */}
@@ -270,7 +334,7 @@ export function DepartmentManagement() {
                 Export
               </Button>
             </DialogTrigger>
-            <ExportDialog
+            <ExportDepartmentDialog
               departments={filteredDepartments}
               onClose={() => {
                 setIsExportOpen(false);

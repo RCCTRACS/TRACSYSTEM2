@@ -94,7 +94,7 @@ try {
         color: #222;
         text-align: center;
       ">
-        <img src="https://i.postimg.cc/x1mTm0zX/logo.png" 
+        <img src="https://i.ibb.co/4R9302hJ/logo.png" 
              alt="TRAC System" 
              style="width:100px;height:100px;object-fit:contain;margin-bottom:18px;" />
         <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:18px;">Attendance Notification</h2>

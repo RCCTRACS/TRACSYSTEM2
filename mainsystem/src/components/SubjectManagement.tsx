@@ -19,6 +19,8 @@ import { DeleteSubjectDialog } from "./DeleteSubjectDialog";
 import { FilterSubjectDialog } from "./FilterSubjectDialog";
 import { ExportSubjectDialog } from "./ExportSubjectDialog";
 import { BulkUploadSubject } from "./BulkUploadSubject";
+import { UserFormDialog } from "./UserFormDialog";
+import type { User } from "./UserFormDialog"; // Make sure this import matches your UserFormDialog
 
 type DisplaySubject = {
   subject_code: string;
@@ -44,7 +46,7 @@ type FormSubject = {
 };
 
 const API_URL =
-  "http://192.168.0.137/capstone/mainsystem/backend/subject_api.php";
+  "http://192.168.0.143/capstone/mainsystem/backend/subject_api.php";
 
 export function SubjectManagement() {
   const [subjects, setSubjects] = useState<DisplaySubject[]>([]);
@@ -67,6 +69,10 @@ export function SubjectManagement() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   const outlineBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
   const outlineBox = "border-2 border-[#5C4033] rounded-lg shadow-sm bg-white";
@@ -78,6 +84,19 @@ export function SubjectManagement() {
   useEffect(() => {
     setFilteredSubjects(subjects);
   }, [subjects]);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("authUserId");
+    if (userId) {
+      fetch("http://192.168.0.143/capstone/mainsystem/backend/users_api.php")
+        .then((res) => res.json())
+        .then((data) => {
+          const list = data?.users ?? (Array.isArray(data) ? data : []);
+          const user = list.find((u: any) => u.id === userId);
+          setCurrentUser(user ?? null);
+        });
+    }
+  }, []);
 
   const fetchSubjects = async () => {
     try {
@@ -189,15 +208,58 @@ export function SubjectManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-black">RCC TRACS</p>
+          <p className="text-sm font-normal text-black">RCC TRACS</p>
           <h2 className="text-3xl font-bold text-black">Subject Management</h2>
         </div>
-        <Button
-          className={`${outlineBtn} flex items-center gap-2 rounded-full px-4 py-2`}
-        >
-          <UserIcon className="h-6 w-6 text-black" />
-          Admin
-        </Button>
+
+        {/* Profile dropdown (EXACT COPY from UserManagement) */}
+        <div className="relative">
+          <div
+            className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
+            onClick={() => setDropdownOpen((prev) => !prev)}
+          >
+            <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
+            <span className="text-black text-sm font-medium">
+              {currentUser ? `${currentUser.first_name}` : "User"}
+            </span>
+            <span className="ml-2 text-xs">▼</span>
+          </div>
+
+          {dropdownOpen && (
+            <div className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10">
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  setIsProfileOpen(true);
+                  setDropdownOpen(false);
+                }}
+              >
+                Edit Profile
+              </div>
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  localStorage.clear();
+                  sessionStorage.removeItem("sidebarHasAnimated");
+                  setDropdownOpen(false);
+                  window.location.href = "/";
+                }}
+              >
+                Logout
+              </div>
+            </div>
+          )}
+
+          {/* Edit Profile Modal */}
+          <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <UserFormDialog
+              user={currentUser}
+              onSave={() => setIsProfileOpen(false)}
+              onClose={() => setIsProfileOpen(false)}
+              isProfile
+            />
+          </Dialog>
+        </div>
       </div>
 
       {/* Search + Actions */}

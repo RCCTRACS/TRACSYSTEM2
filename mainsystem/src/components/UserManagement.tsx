@@ -12,8 +12,7 @@ import {
   Download,
   Upload,
   Edit,
-  Trash2,
-  User as UserIcon
+  Trash2
 } from "lucide-react";
 
 import { UserFormDialog } from "./UserFormDialog";
@@ -35,6 +34,7 @@ export interface User {
 
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -45,9 +45,12 @@ export function UserManagement() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const API_URL =
-    "http://192.168.0.137/capstone/mainsystem/backend/users_api.php";
+    "http://192.168.0.143/capstone/mainsystem/backend/users_api.php";
 
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
@@ -60,6 +63,11 @@ export function UserManagement() {
         const list: User[] = data?.users ?? (Array.isArray(data) ? data : []);
         setUsers(list);
         setFilteredUsers(list);
+        const userId = localStorage.getItem("authUserId");
+        if (userId) {
+          const user = list.find((u) => u.id === userId);
+          setCurrentUser(user ?? null);
+        }
       })
       .catch((err) => console.error("Error fetching users:", err));
   }, []);
@@ -170,6 +178,14 @@ export function UserManagement() {
     document.body.removeChild(link);
   };
 
+  // Logout
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.removeItem("sidebarHasAnimated");
+    setDropdownOpen(false);
+    window.location.href = "/";
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -178,12 +194,52 @@ export function UserManagement() {
           <p className="text-sm font-normal text-black">RCC TRACS</p>
           <h2 className="text-3xl font-bold text-black">User Management</h2>
         </div>
-        <Button
-          className={`${outlineDarkBrownBtn} flex items-center gap-2 rounded-full px-4 py-2`}
-        >
-          <UserIcon className="h-6 w-6 text-black" />
-          Admin
-        </Button>
+
+        {/* Profile dropdown */}
+        <div className="relative">
+          <div
+            className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
+            onClick={() => setDropdownOpen((prev) => !prev)}
+          >
+            <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
+            <span className="text-black text-sm font-medium">
+              {currentUser ? `${currentUser.first_name}` : "User"}
+            </span>
+            <span className="ml-2 text-xs">▼</span>
+          </div>
+
+          {dropdownOpen && (
+            <div className="absolute top-full right-0 mt-2 bg-white border-2 border-[#5C4033] rounded-md shadow-md w-40 z-10">
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={() => {
+                  setIsProfileOpen(true);
+                  setDropdownOpen(false);
+                }}
+              >
+                Edit Profile
+              </div>
+              <div
+                className="px-4 py-2 cursor-pointer hover:bg-[#f9eacb]"
+                onClick={handleLogout}
+              >
+                Logout
+              </div>
+            </div>
+          )}
+
+          {/* Edit Profile Modal */}
+          <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <UserFormDialog
+              user={currentUser}
+              onSave={(data) => {
+                setIsProfileOpen(false);
+              }}
+              onClose={() => setIsProfileOpen(false)}
+              isProfile
+            />
+          </Dialog>
+        </div>
       </div>
 
       {/* Search + Buttons */}
