@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import {
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,10 @@ interface BulkUploadStudentProps {
   onUpload: (students: Student[]) => void;
 }
 
-export function BulkUploadStudent({ onClose, onUpload }: BulkUploadStudentProps) {
+export function BulkUploadStudent({
+  onClose,
+  onUpload
+}: BulkUploadStudentProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Student[]>([]);
   const [error, setError] = useState<string>("");
@@ -46,7 +49,7 @@ export function BulkUploadStudent({ onClose, onUpload }: BulkUploadStudentProps)
             "student_name",
             "year_level",
             "department",
-            "parent_email",
+            "parent_email"
           ];
           const headers = results.meta.fields || [];
           const isValid = expectedHeaders.every((h) => headers.includes(h));
@@ -55,19 +58,21 @@ export function BulkUploadStudent({ onClose, onUpload }: BulkUploadStudentProps)
             return;
           }
 
-          const parsed: Student[] = results.data.map((row: any, idx: number) => ({
-            barcode_id: row.barcode_id?.trim() || "",
-            student_name: row.student_name?.trim() || "",
-            year_level: row.year_level?.trim() || "",
-            department: row.department?.trim() || "",
-            parent_email: row.parent_email?.trim() || "",
-          }));
+          const parsed: Student[] = results.data.map(
+            (row: any, idx: number) => ({
+              barcode_id: row.barcode_id?.trim() || "",
+              student_name: row.student_name?.trim() || "",
+              year_level: row.year_level?.trim() || "",
+              department: row.department?.trim() || "",
+              parent_email: row.parent_email?.trim() || ""
+            })
+          );
 
           setPreview(parsed);
         },
         error: (err) => {
           setError("Error parsing file: " + err.message);
-        },
+        }
       });
     };
     reader.readAsText(uploadedFile);
@@ -92,7 +97,7 @@ export function BulkUploadStudent({ onClose, onUpload }: BulkUploadStudentProps)
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(student),
+              body: JSON.stringify(student)
             }
           );
           const data = await res.json();
@@ -140,7 +145,9 @@ export function BulkUploadStudent({ onClose, onUpload }: BulkUploadStudentProps)
           <p className="text-xs text-muted-foreground">
             {file ? file.name : "No file chosen"}
           </p>
-          {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
+          {error && (
+            <p className="text-xs text-red-500 font-semibold">{error}</p>
+          )}
         </div>
 
         {/* Preview */}

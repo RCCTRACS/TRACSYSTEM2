@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import {
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +57,7 @@ export function BulkUploadStrand({ onUpload, onClose }: BulkUploadStrandProps) {
             return {
               id: Date.now().toString() + idx, // temporary unique ID
               strand,
-              type,
+              type
             };
           })
           .filter((row): row is Strand => row !== null);
@@ -84,7 +84,7 @@ export function BulkUploadStrand({ onUpload, onClose }: BulkUploadStrandProps) {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bulk: preview }), // ✅ backend expects {bulk: []}
+          body: JSON.stringify({ bulk: preview }) // ✅ backend expects {bulk: []}
         }
       );
 

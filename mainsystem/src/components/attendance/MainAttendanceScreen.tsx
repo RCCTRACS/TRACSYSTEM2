@@ -6,7 +6,8 @@ import collegeBg from "@/assets/Our-Lady-of-Lourdes-Building.jpg";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-const API_URL = "http://192.168.1.13/capstone/mainsystem/backend/attendance_api.php";
+const API_URL =
+  "http://192.168.1.13/capstone/mainsystem/backend/attendance_api.php";
 
 export const MainAttendanceScreen = () => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export const MainAttendanceScreen = () => {
       const date = now.toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
-        year: "numeric",
+        year: "numeric"
       });
 
       const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
@@ -30,7 +31,7 @@ export const MainAttendanceScreen = () => {
       const time = now.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
-        hour12: true,
+        hour12: true
       });
 
       setCurrentTime(`${date}, ${weekday} | ${time}`);
@@ -78,7 +79,7 @@ export const MainAttendanceScreen = () => {
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
+        body: formData.toString()
       });
 
       const text = await response.text();
@@ -118,15 +119,13 @@ export const MainAttendanceScreen = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/50" />
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6">
-        
         {/* Full-width Brown Header Bar */}
         <div className="w-full bg-[#4B2E1A]/95 shadow-lg p-6 mb-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             REPUBLIC CENTRAL COLLEGES
           </h1>
-            <p className="text-lg md:text-3xl text-white font-semibold tracking-wide">
+          <p className="text-lg md:text-3xl text-white font-semibold tracking-wide">
             Time and Record Attendance Checking System (RCC-TRACS)
-
           </p>
           <p className="mt-4 text-2xl md:text-3xl text-yellow-200 font-bold">
             {currentTime}

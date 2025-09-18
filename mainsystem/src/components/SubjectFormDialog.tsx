@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-  SelectItem,
+  SelectItem
 } from "@/components/ui/select";
 
 interface SubjectFormDialogProps {
@@ -27,7 +27,7 @@ interface SubjectFormDialogProps {
 export function SubjectFormDialog({
   subject,
   onSave,
-  onClose,
+  onClose
 }: SubjectFormDialogProps) {
   const emptyForm = {
     code: "",
@@ -37,7 +37,7 @@ export function SubjectFormDialog({
     grade: "",
     strand: "",
     section: "",
-    instructor: "",
+    instructor: ""
   };
 
   const [formData, setFormData] = useState<any>(emptyForm);
@@ -103,7 +103,7 @@ export function SubjectFormDialog({
       grade: subject.grade || "",
       strand: subject.strand || "",
       section: subject.section || "",
-      instructor: subject.instructor || "",
+      instructor: subject.instructor || ""
     });
 
     setInitialized(true);
@@ -122,7 +122,7 @@ export function SubjectFormDialog({
       "BSED",
       "BSHM",
       "BSIT",
-      "BSTM",
+      "BSTM"
     ];
 
     if (collegePrograms.includes(formData.department)) {
@@ -170,7 +170,7 @@ export function SubjectFormDialog({
         ...prev,
         grade: "",
         strand: "",
-        section: "",
+        section: ""
       }));
     }
     if (key === "grade") {
@@ -187,7 +187,7 @@ export function SubjectFormDialog({
       grade: formData.grade || "",
       strand: formData.strand || "",
       section: formData.section || "",
-      instructor: formData.instructor || "",
+      instructor: formData.instructor || ""
     };
 
     onSave(mappedData);

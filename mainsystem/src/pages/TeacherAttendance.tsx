@@ -89,7 +89,9 @@ const TeacherAttendance = () => {
   // --- Add attendance (Manual Input) ---
   const handleAddAttendance = async (barcodeId: string, timeIn: string) => {
     try {
-      const formattedTime = /^\d{2}:\d{2}$/.test(timeIn) ? timeIn + ":00" : timeIn;
+      const formattedTime = /^\d{2}:\d{2}$/.test(timeIn)
+        ? timeIn + ":00"
+        : timeIn;
 
       const formData = new URLSearchParams();
       formData.append("barcode_id", barcodeId);
@@ -113,7 +115,11 @@ const TeacherAttendance = () => {
       }
 
       if (data?.success) fetchAttendances();
-      else alert("Failed to add attendance: " + (data?.error || data?.message || "Unknown error"));
+      else
+        alert(
+          "Failed to add attendance: " +
+            (data?.error || data?.message || "Unknown error")
+        );
     } catch (err) {
       console.error(err);
       alert("Error connecting to server.");
@@ -134,7 +140,10 @@ const TeacherAttendance = () => {
       }
 
       if (data?.success) fetchAttendances();
-      else alert("Failed to delete attendance: " + (data?.message || "Unknown error"));
+      else
+        alert(
+          "Failed to delete attendance: " + (data?.message || "Unknown error")
+        );
     } catch (err) {
       console.error(err);
       alert("Error connecting to server.");
@@ -143,15 +152,20 @@ const TeacherAttendance = () => {
 
   // --- Export CSV ---
   const handleExport = () => {
-    const csvHeader = "ID,Barcode ID,Name,Year Level,Department,Time In,Time Out,Status\n";
+    const csvHeader =
+      "ID,Barcode ID,Name,Year Level,Department,Time In,Time Out,Status\n";
     const csvRows = attendances
       .map(
         (a) =>
-          `${a.id},${a.barcodeId},${a.studentName},${a.yearLevel},${a.department},${a.timeIn},${a.timeOut ?? "-"},${a.status}`
+          `${a.id},${a.barcodeId},${a.studentName},${a.yearLevel},${
+            a.department
+          },${a.timeIn},${a.timeOut ?? "-"},${a.status}`
       )
       .join("\n");
 
-    const blob = new Blob([csvHeader + csvRows], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvHeader + csvRows], {
+      type: "text/csv;charset=utf-8;"
+    });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.setAttribute("download", "attendance_records.csv");
@@ -163,9 +177,14 @@ const TeacherAttendance = () => {
   // --- Filter attendances ---
   const filteredAttendances = attendances.filter((a) => {
     return (
-      (!filters.name || a.studentName.toLowerCase().includes(filters.name.toLowerCase())) &&
-      (!filters.yearLevel || a.yearLevel.toLowerCase().includes(filters.yearLevel.toLowerCase())) &&
-      (!filters.department || a.department.toLowerCase().includes(filters.department.toLowerCase())) &&
+      (!filters.name ||
+        a.studentName.toLowerCase().includes(filters.name.toLowerCase())) &&
+      (!filters.yearLevel ||
+        a.yearLevel.toLowerCase().includes(filters.yearLevel.toLowerCase())) &&
+      (!filters.department ||
+        a.department
+          .toLowerCase()
+          .includes(filters.department.toLowerCase())) &&
       (!filters.timeIn || a.timeIn >= filters.timeIn) &&
       (!filters.timeOut || (a.timeOut ?? "") <= filters.timeOut) &&
       (!filters.status || a.status === filters.status)
@@ -180,7 +199,9 @@ const TeacherAttendance = () => {
       <div className="flex justify-between items-center">
         <div>
           <p className="text-sm font-normal text-black">RCC TRACS</p>
-          <h2 className="text-3xl font-bold text-black">Attendance Management</h2>
+          <h2 className="text-3xl font-bold text-black">
+            Attendance Management
+          </h2>
         </div>
 
         {/* Profile dropdown */}
@@ -271,7 +292,10 @@ const TeacherAttendance = () => {
               open={isFilterOpen}
               onClose={() => setIsFilterOpen(false)}
               onFilter={(status) => {
-                setFilters({ ...filters, status: status === "All" ? "" : status });
+                setFilters({
+                  ...filters,
+                  status: status === "All" ? "" : status
+                });
                 setIsFilterOpen(false);
               }}
             />
@@ -297,7 +321,9 @@ const TeacherAttendance = () => {
 
           <div className="mt-2 space-y-3">
             {filteredAttendances.length === 0 ? (
-              <div className="text-center text-gray-500 py-6">No attendance records</div>
+              <div className="text-center text-gray-500 py-6">
+                No attendance records
+              </div>
             ) : (
               filteredAttendances.map((a) => (
                 <div

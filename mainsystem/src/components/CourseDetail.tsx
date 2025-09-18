@@ -7,7 +7,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -44,7 +44,7 @@ const CourseDetail = ({
   courseTitle,
   department,
   courseTime,
-  onBack,
+  onBack
 }: CourseDetailProps) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,7 +64,9 @@ const CourseDetail = ({
         );
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
-          setStudents(data.data.map((s: any) => ({ ...s, status: s.status || "Absent" })));
+          setStudents(
+            data.data.map((s: any) => ({ ...s, status: s.status || "Absent" }))
+          );
         } else {
           setStudents([]);
         }
@@ -90,9 +92,13 @@ const CourseDetail = ({
 
       const fetchSearch = async () => {
         try {
-          const res = await fetch(`${STUDENT_API}?search=${encodeURIComponent(trimmed)}`);
+          const res = await fetch(
+            `${STUDENT_API}?search=${encodeURIComponent(trimmed)}`
+          );
           const data = await res.json();
-          setSearchResults(data.success && Array.isArray(data.data) ? data.data : []);
+          setSearchResults(
+            data.success && Array.isArray(data.data) ? data.data : []
+          );
         } catch (err) {
           console.error("Search failed:", err);
           setSearchResults([]);
@@ -117,12 +123,15 @@ const CourseDetail = ({
           student_name: student.student_name,
           department: student.department,
           year_level: student.year_level,
-          status: "Absent",
-        }),
+          status: "Absent"
+        })
       });
       const result = await res.json();
       if (result.success) {
-        setStudents((prev) => [...prev, { ...student, status: "Absent", id: result.id }]);
+        setStudents((prev) => [
+          ...prev,
+          { ...student, status: "Absent", id: result.id }
+        ]);
         alert(`${student.student_name} added to ${courseCode}`);
         setSearchTerm("");
         setSearchResults([]);
@@ -135,13 +144,24 @@ const CourseDetail = ({
   };
 
   // Update status locally + persist
-  const handleStatusChange = async (barcode_id: string, newStatus: "Present" | "Late" | "Absent") => {
-    setStudents((prev) => prev.map((s) => (s.barcode_id === barcode_id ? { ...s, status: newStatus } : s)));
+  const handleStatusChange = async (
+    barcode_id: string,
+    newStatus: "Present" | "Late" | "Absent"
+  ) => {
+    setStudents((prev) =>
+      prev.map((s) =>
+        s.barcode_id === barcode_id ? { ...s, status: newStatus } : s
+      )
+    );
     try {
       await fetch(COURSE_DETAIL_API, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ barcode_id, subject_code: courseCode, status: newStatus }),
+        body: JSON.stringify({
+          barcode_id,
+          subject_code: courseCode,
+          status: newStatus
+        })
       });
     } catch (err) {
       console.error("Failed to update status:", err);
@@ -155,9 +175,11 @@ const CourseDetail = ({
       await fetch(COURSE_DETAIL_API, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: student.id }),
+        body: JSON.stringify({ id: student.id })
       });
-      setStudents((prev) => prev.filter((s) => s.barcode_id !== student.barcode_id));
+      setStudents((prev) =>
+        prev.filter((s) => s.barcode_id !== student.barcode_id)
+      );
     } catch (err) {
       console.error("Failed to delete student:", err);
     }
@@ -166,8 +188,15 @@ const CourseDetail = ({
   // Export CSV
   const handleExport = () => {
     const csvHeader = "Barcode ID,Name,Year Level,Department,Status\n";
-    const csvRows = students.map((s) => `${s.barcode_id},${s.student_name},${s.year_level},${s.department},${s.status}`).join("\n");
-    const blob = new Blob([csvHeader + csvRows], { type: "text/csv;charset=utf-8;" });
+    const csvRows = students
+      .map(
+        (s) =>
+          `${s.barcode_id},${s.student_name},${s.year_level},${s.department},${s.status}`
+      )
+      .join("\n");
+    const blob = new Blob([csvHeader + csvRows], {
+      type: "text/csv;charset=utf-8;"
+    });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.setAttribute("download", `${courseCode}_students.csv`);
@@ -176,7 +205,9 @@ const CourseDetail = ({
     document.body.removeChild(link);
   };
 
-  const filteredStudents = students.filter((s) => !filters.status || s.status === filters.status);
+  const filteredStudents = students.filter(
+    (s) => !filters.status || s.status === filters.status
+  );
 
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
@@ -213,7 +244,7 @@ const CourseDetail = ({
         <div className="flex items-center gap-2">
           <Button className={outlineDarkBrownBtn} onClick={handleBack}>
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Close
+            Back
           </Button>
 
           <Button className={outlineDarkBrownBtn} onClick={handleExport}>
@@ -247,11 +278,18 @@ const CourseDetail = ({
         <div className="mt-4 border rounded p-3">
           <h3 className="font-semibold mb-2">Search Results</h3>
           {searchResults.map((s) => (
-            <div key={s.barcode_id} className="flex justify-between items-center p-2 border-b">
+            <div
+              key={s.barcode_id}
+              className="flex justify-between items-center p-2 border-b"
+            >
               <span>
-                {s.student_name} ({s.barcode_id}) — {s.department} {s.year_level}
+                {s.student_name} ({s.barcode_id}) — {s.department}{" "}
+                {s.year_level}
               </span>
-              <Button className={outlineDarkBrownBtn} onClick={() => handleAddStudent(s)}>
+              <Button
+                className={outlineDarkBrownBtn}
+                onClick={() => handleAddStudent(s)}
+              >
                 Add
               </Button>
             </div>
@@ -267,7 +305,9 @@ const CourseDetail = ({
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-center text-gray-500 py-6">Loading students...</p>
+            <p className="text-center text-gray-500 py-6">
+              Loading students...
+            </p>
           ) : filteredStudents.length === 0 ? (
             <p className="text-center text-gray-500 py-6">No students found.</p>
           ) : (
@@ -298,7 +338,10 @@ const CourseDetail = ({
                       <Select
                         value={student.status}
                         onValueChange={(value) =>
-                          handleStatusChange(student.barcode_id, value as "Present" | "Late" | "Absent")
+                          handleStatusChange(
+                            student.barcode_id,
+                            value as "Present" | "Late" | "Absent"
+                          )
                         }
                       >
                         <SelectTrigger className="w-24">
@@ -313,7 +356,11 @@ const CourseDetail = ({
                     </div>
 
                     <div className="flex justify-center">
-                      <Button variant="destructive" size="icon" onClick={() => handleDeleteStudent(student)}>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => handleDeleteStudent(student)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

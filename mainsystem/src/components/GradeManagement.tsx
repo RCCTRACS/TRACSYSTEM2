@@ -48,7 +48,9 @@ export function GradeManagement() {
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(
+    null
+  );
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const { toast } = useToast();

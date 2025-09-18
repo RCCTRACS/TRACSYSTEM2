@@ -9,13 +9,13 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
 import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 
 export interface User {
@@ -44,7 +44,7 @@ export function UserFormDialog({
   user,
   onSave,
   onClose,
-  isProfile,
+  isProfile
 }: UserFormDialogProps) {
   const [formData, setFormData] = useState({
     first_name: "",
@@ -54,7 +54,7 @@ export function UserFormDialog({
     level: "",
     role: "Teacher" as "Admin" | "Teacher",
     status: "Active" as "Active" | "Inactive",
-    password: "",
+    password: ""
   });
 
   const [departments, setDepartments] = useState<string[]>(["ITS", "Teacher"]);
@@ -70,7 +70,7 @@ export function UserFormDialog({
         level: user.level ?? "",
         role: user.role,
         status: user.status,
-        password: "",
+        password: ""
       });
     } else {
       setFormData({
@@ -81,7 +81,7 @@ export function UserFormDialog({
         level: "",
         role: "Teacher",
         status: "Active",
-        password: "",
+        password: ""
       });
     }
   }, [user]);
@@ -126,7 +126,7 @@ export function UserFormDialog({
       const response = await fetch(API_URL, {
         method: user ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(user ? { id: userId, ...payload } : payload),
+        body: JSON.stringify(user ? { id: userId, ...payload } : payload)
       });
 
       const result = await response.json();
@@ -290,7 +290,7 @@ export function UserFormDialog({
             onValueChange={(value) =>
               setFormData({
                 ...formData,
-                status: value as "Active" | "Inactive",
+                status: value as "Active" | "Inactive"
               })
             }
           >

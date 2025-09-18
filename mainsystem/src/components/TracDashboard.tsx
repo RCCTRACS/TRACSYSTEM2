@@ -61,7 +61,7 @@ const TracDashboard = ({ teacherEmail }: TracDashboardProps) => {
         if (data.success) {
           setTeacher({
             name: data.teacher?.name || storedName || "Unknown",
-            email: data.teacher?.email || effectiveEmail,
+            email: data.teacher?.email || effectiveEmail
           });
           setSubjects(data.subjects || []);
         } else {
@@ -126,7 +126,7 @@ const TracDashboard = ({ teacherEmail }: TracDashboardProps) => {
                     onClick={() =>
                       setSelectedCourse({
                         courseCode: subject.subject_code,
-                        courseTitle: subject.subject_name,
+                        courseTitle: subject.subject_name
                       })
                     }
                   />
@@ -138,9 +138,7 @@ const TracDashboard = ({ teacherEmail }: TracDashboardProps) => {
                     key={`placeholder-${idx}`}
                     className="bg-card border border-border flex flex-col justify-center opacity-50"
                   >
-                    <CardContent className="p-8 text-center flex-1 flex items-center justify-center">
-                    
-                    </CardContent>
+                    <CardContent className="p-8 text-center flex-1 flex items-center justify-center"></CardContent>
                   </Card>
                 ))}
               </div>

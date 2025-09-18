@@ -211,7 +211,9 @@ export function DepartmentManagement() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-normal text-black">RCC TRACS</p>
-          <h2 className="text-3xl font-bold text-black">Department Management</h2>
+          <h2 className="text-3xl font-bold text-black">
+            Department Management
+          </h2>
         </div>
 
         {/* Profile dropdown */}
@@ -222,7 +224,9 @@ export function DepartmentManagement() {
           >
             <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
             <span className="text-black text-sm font-medium">
-              {currentUser && "first_name" in currentUser ? currentUser.first_name : "User"}
+              {currentUser && "first_name" in currentUser
+                ? currentUser.first_name
+                : "User"}
             </span>
             <span className="ml-2 text-xs">▼</span>
           </div>
@@ -334,7 +338,7 @@ export function DepartmentManagement() {
               departments={filteredDepartments}
               onClose={() => {
                 setIsExportOpen(false);
-                toast.success("Departments exported successfully");
+                // toast.success("Departments exported successfully");
               }}
             />
           </Dialog>

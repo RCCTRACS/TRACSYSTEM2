@@ -8,6 +8,7 @@ import collegeBg from "@/assets/Our-Lady-of-Lourdes-Building.jpg";
 import tracsSeal from "@/assets/trac-seal.png";
 
 interface StudentInfo {
+  id?: string;
   student_name: string;
   barcode_id: string;
   year_level: string;
@@ -19,6 +20,8 @@ interface StudentInfo {
 
 const ATTENDANCE_API =
   "http://192.168.1.13/capstone/mainsystem/backend/attendance_api.php";
+const STUDENT_API =
+  "http://192.168.1.13/capstone/mainsystem/backend/student_api.php";
 
 export const AttendanceConfirmation = () => {
   const navigate = useNavigate();
@@ -42,7 +45,7 @@ export const AttendanceConfirmation = () => {
   useEffect(() => {
     if (!barcode) return;
 
-    // Cleanup previous request
+    // Cancel any ongoing request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -52,68 +55,90 @@ export const AttendanceConfirmation = () => {
       timeoutRef.current = null;
     }
 
-    // Reset state to "waiting"
     setStudent(null);
     setFormattedDate("");
     setFormattedTime("");
     setLoading(true);
 
-    // Create new request ID
     const currentRequestId = ++requestIdRef.current;
-
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     const fetchStudentData = async () => {
       try {
-        const url = `${ATTENDANCE_API}?barcode_id=${encodeURIComponent(
-          barcode
-        )}&_=${Date.now()}`;
+        // 1. Fetch attendance info
+        const attendanceRes = await fetch(
+          `${ATTENDANCE_API}?barcode_id=${encodeURIComponent(
+            barcode
+          )}&_=${Date.now()}`,
+          { signal: controller.signal, cache: "no-store" }
+        );
 
-        const res = await fetch(url, {
-          method: "GET",
-          signal: controller.signal,
-          cache: "no-store",
-        });
+        let attendanceRecord: any = null;
+        if (attendanceRes.ok) {
+          const attendanceData = await attendanceRes.json();
+          if (requestIdRef.current === currentRequestId) {
+            attendanceRecord = Array.isArray(attendanceData)
+              ? attendanceData[0]
+              : attendanceData;
+          }
+        }
 
-        if (!res.ok) {
-          console.warn("Attendance API returned non-OK:", res.status);
+        // 2. Fetch student info
+        const studentRes = await fetch(
+          `${STUDENT_API}?barcode_id=${encodeURIComponent(
+            barcode
+          )}&_=${Date.now()}`,
+          { signal: controller.signal, cache: "no-store" }
+        );
+
+        let studentRecordRaw: any = null;
+        if (studentRes.ok) {
+          const studentData = await studentRes.json();
+          if (requestIdRef.current === currentRequestId) {
+            if (Array.isArray(studentData.data)) {
+              studentRecordRaw = studentData.data[0];
+            } else if (studentData.data) {
+              studentRecordRaw = studentData.data;
+            }
+          }
+        }
+
+        if (!studentRecordRaw) {
+          console.warn("No student record found for barcode:", barcode);
           return;
         }
 
-        const data = await res.json();
-        if (requestIdRef.current !== currentRequestId) return; // ignore stale
-
-        const record: any = Array.isArray(data) ? data[0] : data;
-        if (!record) return;
-
-        // Format current timestamp
+        // 3. Format current time
         const now = new Date();
         setFormattedDate(
           now.toLocaleDateString("en-US", {
             month: "long",
             day: "numeric",
-            year: "numeric",
+            year: "numeric"
           })
         );
         setFormattedTime(
           now.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
-            hour12: true,
+            hour12: true
           })
         );
 
-        // Update student info
-        setStudent({
-          student_name: record.student_name || "Unknown",
-          barcode_id: record.barcode_id,
-          year_level: record.year_level,
-          department: record.department,
-          time_in: record.time_in,
-          time_out: record.time_out,
-          status: record.status,
-        });
+        // 4. Merge student + attendance info
+        const studentRecord: StudentInfo = {
+          id: attendanceRecord?.id,
+          student_name: studentRecordRaw.student_name || "No name",
+          barcode_id: studentRecordRaw.barcode_id ?? barcode,
+          year_level: studentRecordRaw.year_level ?? "",
+          department: studentRecordRaw.department ?? "",
+          time_in: attendanceRecord?.time_in,
+          time_out: attendanceRecord?.time_out,
+          status: attendanceRecord?.status ?? status
+        };
+
+        setStudent(studentRecord);
       } catch (err: any) {
         if (err.name !== "AbortError") {
           console.error("Error fetching student info:", err);
@@ -129,13 +154,10 @@ export const AttendanceConfirmation = () => {
 
     // Auto-clear after 3s
     timeoutRef.current = window.setTimeout(() => {
-      // Abort request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
       }
-
-      // 🔥 Reset state before leaving
       setStudent(null);
       setFormattedDate("");
       setFormattedTime("");
@@ -144,7 +166,6 @@ export const AttendanceConfirmation = () => {
       navigate("/attendance", { replace: true });
     }, 3000);
 
-    // Cleanup
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -154,12 +175,6 @@ export const AttendanceConfirmation = () => {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
-
-      // 🔥 Reset state on unmount
-      setStudent(null);
-      setFormattedDate("");
-      setFormattedTime("");
-      setLoading(false);
     };
   }, [barcode, navigate, status]);
 
@@ -177,8 +192,16 @@ export const AttendanceConfirmation = () => {
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Header */}
         <div className="flex items-center justify-between p-6">
-          <img src={rccSeal} alt="RCC Seal" className="w-20 h-20 sm:w-24 sm:h-24" />
-          <img src={tracsSeal} alt="TRACS Seal" className="w-20 h-20 sm:w-24 sm:h-24" />
+          <img
+            src={rccSeal}
+            alt="RCC Seal"
+            className="w-20 h-20 sm:w-24 sm:h-24"
+          />
+          <img
+            src={tracsSeal}
+            alt="TRACS Seal"
+            className="w-20 h-20 sm:w-24 sm:h-24"
+          />
         </div>
 
         {/* Dynamic Banner */}
@@ -196,7 +219,9 @@ export const AttendanceConfirmation = () => {
               {loading ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-[#5C4033]" />
-                  <p className="text-gray-600 text-xl font-semibold">Please wait…</p>
+                  <p className="text-gray-600 text-xl font-semibold">
+                    Please wait…
+                  </p>
                 </div>
               ) : student && barcode ? (
                 <div className="w-full max-w-[420px] aspect-[3/4] flex justify-center items-center">
@@ -206,12 +231,15 @@ export const AttendanceConfirmation = () => {
                     alt="Student"
                     className="w-full h-full object-cover rounded-lg"
                     onError={(e) =>
-                      ((e.target as HTMLImageElement).src = "/fallback-student.png")
+                      ((e.target as HTMLImageElement).src =
+                        "/fallback-student.png")
                     }
                   />
                 </div>
               ) : (
-                <p className="text-gray-500 text-lg sm:text-2xl">No photo available</p>
+                <p className="text-gray-500 text-lg sm:text-2xl">
+                  No photo available
+                </p>
               )}
             </div>
 

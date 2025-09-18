@@ -177,7 +177,10 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Profile dropdown (EXACT COPY from UserManagement) */}
-          <div className="profile-chip-container" style={{ position: "relative" }}>
+          <div
+            className="profile-chip-container"
+            style={{ position: "relative" }}
+          >
             <div
               className="profile-chip"
               onClick={() => setDropdownOpen((prev) => !prev)}

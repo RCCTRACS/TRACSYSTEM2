@@ -138,7 +138,9 @@ export function BulkUploadDialog({ onUpload, onClose }: BulkUploadDialogProps) {
           <p className="text-xs text-muted-foreground">
             {file ? file.name : "No file chosen"}
           </p>
-          {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
+          {error && (
+            <p className="text-xs text-red-500 font-semibold">{error}</p>
+          )}
         </div>
 
         {/* Preview */}

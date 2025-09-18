@@ -44,7 +44,9 @@ export function TeacherStudents() {
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ first_name: string } | null>(
+    null
+  );
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const outlineDarkBrownBtn =
@@ -167,10 +169,15 @@ export function TeacherStudents() {
   };
 
   // --- Filter ---
-  const handleFilter = (department: string | null, yearLevel: string | null) => {
+  const handleFilter = (
+    department: string | null,
+    yearLevel: string | null
+  ) => {
     let filtered = [...students];
-    if (department) filtered = filtered.filter((s) => s.department === department);
-    if (yearLevel) filtered = filtered.filter((s) => s.year_level === yearLevel);
+    if (department)
+      filtered = filtered.filter((s) => s.department === department);
+    if (yearLevel)
+      filtered = filtered.filter((s) => s.year_level === yearLevel);
     setFilteredStudents(filtered);
   };
 

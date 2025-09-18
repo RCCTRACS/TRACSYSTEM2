@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-  SelectItem,
+  SelectItem
 } from "@/components/ui/select";
 
 interface FilterSubjectDialogProps {
@@ -27,7 +27,7 @@ interface FilterSubjectDialogProps {
 
 export function FilterSubjectDialog({
   onFilter,
-  onClose,
+  onClose
 }: FilterSubjectDialogProps) {
   const [departments, setDepartments] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
@@ -85,7 +85,7 @@ export function FilterSubjectDialog({
     "BSED",
     "BSHM",
     "BSIT",
-    "BSTM",
+    "BSTM"
   ];
 
   // Filter grades by department

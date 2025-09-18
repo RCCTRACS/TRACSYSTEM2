@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-  SelectItem,
+  SelectItem
 } from "@/components/ui/select";
 
 interface Student {
@@ -38,7 +38,7 @@ interface StudentFormDialogProps {
 export function StudentFormDialog({
   student,
   onSave,
-  onClose,
+  onClose
 }: StudentFormDialogProps) {
   const emptyForm: Student = {
     barcode_id: "",
@@ -48,7 +48,7 @@ export function StudentFormDialog({
     grade: null,
     strand: null,
     section: null,
-    parent_email: "",
+    parent_email: ""
   };
 
   const [formState, setFormState] = useState<Student>(emptyForm);
@@ -100,7 +100,7 @@ export function StudentFormDialog({
         ...student,
         grade: student.grade || null,
         strand: student.strand || null,
-        section: student.section || null,
+        section: student.section || null
       });
     } else {
       setFormState(emptyForm);
@@ -109,7 +109,15 @@ export function StudentFormDialog({
 
   // College programs list
   const collegePrograms = [
-    "ABEL", "BEED", "BSA", "BSBA", "BSCE", "BSED", "BSHM", "BSIT", "BSTM",
+    "ABEL",
+    "BEED",
+    "BSA",
+    "BSBA",
+    "BSCE",
+    "BSED",
+    "BSHM",
+    "BSIT",
+    "BSTM"
   ];
 
   // Filter grades based on department
@@ -178,7 +186,13 @@ export function StudentFormDialog({
       let updated = { ...prev, [key]: value };
 
       if (key === "department") {
-        updated = { ...updated, year_level: "", grade: null, strand: null, section: null };
+        updated = {
+          ...updated,
+          year_level: "",
+          grade: null,
+          strand: null,
+          section: null
+        };
       }
       if (key === "year_level") {
         updated = { ...updated, strand: null, section: null };
@@ -193,7 +207,7 @@ export function StudentFormDialog({
       ...data,
       grade: data.year_level || null,
       strand: data.strand || null,
-      section: data.section || null,
+      section: data.section || null
     };
   };
 

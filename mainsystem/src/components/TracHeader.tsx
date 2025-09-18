@@ -26,12 +26,14 @@ const TracHeader = () => {
 
   // ✅ Fetch current user from backend
   useEffect(() => {
-    const userId = localStorage.getItem("authUserId") || sessionStorage.getItem("authUserId");
+    const userId =
+      localStorage.getItem("authUserId") ||
+      sessionStorage.getItem("authUserId");
     if (!userId) return;
 
     fetch(API_URL_USERS)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         const usersList = Array.isArray(data.users) ? data.users : [];
         const currentUser = usersList.find((u: any) => u.id === userId);
         if (currentUser) {
@@ -42,11 +44,11 @@ const TracHeader = () => {
             department: currentUser.department,
             level: currentUser.level,
             role: currentUser.role,
-            status: currentUser.status,
+            status: currentUser.status
           });
         }
       })
-      .catch(err => console.error("Failed to fetch current user:", err));
+      .catch((err) => console.error("Failed to fetch current user:", err));
   }, []);
 
   // ✅ Convert Teacher → User for form prefill
@@ -61,14 +63,16 @@ const TracHeader = () => {
       department: t.department ?? "",
       level: t.level ?? "",
       role: t.role ?? "Teacher",
-      status: t.status ?? "Active",
+      status: t.status ?? "Active"
     };
   };
 
   // ✅ Handle profile save
   const handleProfileSave = (updated: Partial<User>) => {
-    const fullName = `${updated.first_name ?? ""} ${updated.last_name ?? ""}`.trim();
-    setTeacher(prev => ({
+    const fullName = `${updated.first_name ?? ""} ${
+      updated.last_name ?? ""
+    }`.trim();
+    setTeacher((prev) => ({
       ...prev,
       id: updated.id ?? prev?.id ?? "0",
       name: fullName,
@@ -76,7 +80,7 @@ const TracHeader = () => {
       department: updated.department ?? prev?.department,
       level: updated.level ?? prev?.level,
       role: updated.role ?? prev?.role,
-      status: updated.status ?? prev?.status,
+      status: updated.status ?? prev?.status
     }));
     setIsProfileOpen(false);
   };
@@ -93,7 +97,9 @@ const TracHeader = () => {
       <div>
         <h1 className="text-xl font-semibold text-black">TRAC System</h1>
         {teacher && (
-          <p className="text-2xl font-bold text-black">Welcome, {teacher.name}!</p>
+          <p className="text-2xl font-bold text-black">
+            Welcome, {teacher.name}!
+          </p>
         )}
       </div>
 
@@ -101,7 +107,7 @@ const TracHeader = () => {
         {/* Profile dropdown */}
         <div
           className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
-          onClick={() => setDropdownOpen(prev => !prev)}
+          onClick={() => setDropdownOpen((prev) => !prev)}
         >
           <img src="/user.png" alt="Profile" className="w-7 h-7 mr-2" />
           <span className="text-black text-sm font-medium">

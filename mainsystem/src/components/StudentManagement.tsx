@@ -10,7 +10,7 @@ import {
   Download,
   Upload,
   Edit,
-  Trash2,
+  Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -138,13 +138,13 @@ export function StudentManagement() {
         await fetch(API_URL, {
           method: "PUT",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: formData.toString(),
+          body: formData.toString()
         });
       } else {
         await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: formData.toString(),
+          body: formData.toString()
         });
       }
 
@@ -177,7 +177,7 @@ export function StudentManagement() {
       await fetch(API_URL, {
         method: "DELETE",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
+        body: formData.toString()
       });
       await fetchStudents();
     } catch (err) {
@@ -201,7 +201,10 @@ export function StudentManagement() {
   };
 
   // --- Apply Filter ---
-  const handleFilter = (department: string | null, yearLevel: string | null) => {
+  const handleFilter = (
+    department: string | null,
+    yearLevel: string | null
+  ) => {
     let filtered = [...students];
     if (department) {
       filtered = filtered.filter(
@@ -344,9 +347,9 @@ export function StudentManagement() {
                       return fetch(API_URL, {
                         method: "POST",
                         headers: {
-                          "Content-Type": "application/x-www-form-urlencoded",
+                          "Content-Type": "application/x-www-form-urlencoded"
                         },
-                        body: formData.toString(),
+                        body: formData.toString()
                       });
                     });
                     await Promise.all(promises);
