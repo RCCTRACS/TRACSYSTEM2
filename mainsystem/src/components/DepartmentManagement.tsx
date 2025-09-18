@@ -338,7 +338,7 @@ export function DepartmentManagement() {
               departments={filteredDepartments}
               onClose={() => {
                 setIsExportOpen(false);
-                toast.success("Departments exported successfully");
+                // toast.success("Departments exported successfully");
               }}
             />
           </Dialog>

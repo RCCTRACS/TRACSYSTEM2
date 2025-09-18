@@ -100,7 +100,7 @@ export function AttendanceManagement() {
         data = [];
       }
 
-      const formatted: Attendance[] = data.map((a: any) => ({
+      let formatted: Attendance[] = data.map((a: any) => ({
         id: a.id,
         barcodeId: a.barcode_id,
         studentName: a.student_name,
@@ -110,7 +110,8 @@ export function AttendanceManagement() {
         timeOut: a.time_out,
         status: a.status
       }));
-      setAttendances(formatted);
+
+      setAttendances(sortAttendances(formatted));
     } catch (err) {
       console.error(err);
       setAttendances([]);
@@ -120,6 +121,15 @@ export function AttendanceManagement() {
   useEffect(() => {
     fetchAttendances();
   }, []);
+
+  // --- Sort helper ---
+  const sortAttendances = (list: Attendance[]) => {
+    return [...list].sort((a, b) => {
+      const dateA = new Date(a.timeOut || a.timeIn).getTime();
+      const dateB = new Date(b.timeOut || b.timeIn).getTime();
+      return dateB - dateA; // newest first
+    });
+  };
 
   // --- Add attendance ---
   const handleAddAttendance = async (barcodeId: string, timeIn: string) => {
@@ -151,7 +161,18 @@ export function AttendanceManagement() {
       }
 
       if (data?.success) {
-        fetchAttendances();
+        // Add new attendance to state instantly
+        const newRecord: Attendance = {
+          id: data.id ?? Date.now().toString(),
+          barcodeId,
+          studentName: data.student_name ?? "Unknown",
+          yearLevel: data.year_level ?? "",
+          department: data.department ?? "",
+          timeIn: formattedTime,
+          timeOut: null,
+          status: "Present"
+        };
+        setAttendances((prev) => sortAttendances([...prev, newRecord]));
       } else {
         const msg = data?.error || data?.message || "Unknown error";
         alert("Failed to add attendance: " + msg);
@@ -179,7 +200,10 @@ export function AttendanceManagement() {
       }
 
       if (data?.success) {
-        fetchAttendances();
+        // Remove from state instantly
+        setAttendances((prev) =>
+          sortAttendances(prev.filter((a) => a.id !== id))
+        );
       } else {
         alert(
           "Failed to delete attendance: " + (data?.message || "Unknown error")
