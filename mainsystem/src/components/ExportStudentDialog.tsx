@@ -22,6 +22,8 @@ export function ExportStudentDialog({
       "student_name",
       "year_level",
       "department",
+      "strand",
+      "section",
       "parent_email"
     ];
 
