@@ -49,6 +49,8 @@ export function BulkUploadStudent({
             "student_name",
             "year_level",
             "department",
+            "strand",
+            "section",
             "parent_email"
           ];
           const headers = results.meta.fields || [];
