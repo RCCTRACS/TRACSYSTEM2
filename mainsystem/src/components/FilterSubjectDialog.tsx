@@ -85,7 +85,8 @@ export function FilterSubjectDialog({
     "BSED",
     "BSHM",
     "BSIT",
-    "BSTM"
+    "BSTM",
+    "BSMA"
   ];
 
   // Filter grades by department

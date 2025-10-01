@@ -122,7 +122,8 @@ export function SubjectFormDialog({
       "BSED",
       "BSHM",
       "BSIT",
-      "BSTM"
+      "BSTM",
+      "BSMA"
     ];
 
     if (collegePrograms.includes(formData.department)) {

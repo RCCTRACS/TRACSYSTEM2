@@ -85,7 +85,8 @@ export function FilterStudentDialog({
     "BSED",
     "BSHM",
     "BSIT",
-    "BSTM"
+    "BSTM",
+    "BSMA"
   ];
 
   // --- Filter Grades by Department ---

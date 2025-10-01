@@ -92,6 +92,12 @@ $attendanceRules = [
         "3rd Year" => ["start" => "13:00:00", "grace" => "13:15:00"],
         "4th Year" => ["start" => "13:00:00", "grace" => "13:15:00"],
     ],
+    "BSMA" => [
+        "1st Year" => ["start" => "13:00:00", "grace" => "13:15:00"],
+        "2nd Year" => ["start" => "13:00:00", "grace" => "13:15:00"],
+        "3rd Year" => ["start" => "13:00:00", "grace" => "13:15:00"],
+        "4th Year" => ["start" => "13:00:00", "grace" => "13:15:00"],
+    ],
     // JHS
     "JHS" => [
         "Grade 7"  => ["start" => "07:30:00", "grace" => "07:45:00"],
