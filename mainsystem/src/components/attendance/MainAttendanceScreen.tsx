@@ -101,7 +101,7 @@ export const MainAttendanceScreen = () => {
               ? checkData?.hasTimeIn
                 ? "Time-out recorded"
                 : "Time-in recorded"
-              : "Failed")
+              : "Student does not exist, please register first")
         )}`
       );
 
