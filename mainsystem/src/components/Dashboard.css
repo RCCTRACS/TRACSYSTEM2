@@ -108,14 +108,15 @@ body, .dashboard {
 }
 
 .system-title {
-  font-size: 25px;
+  font-size: 35px;
   font-weight: bold;
   color: #333;
 }
 
 .welcome {
-  font-size: 14px;
-  color: #666;
+  font-size: 22px;
+  color: #000000;
+  font-weight: 600;
 }
 
 /* Profile Chip */
