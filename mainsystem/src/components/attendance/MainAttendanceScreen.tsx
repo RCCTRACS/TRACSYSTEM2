@@ -124,8 +124,9 @@ export const MainAttendanceScreen = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             REPUBLIC CENTRAL COLLEGES
           </h1>
-          <p className="text-lg md:text-3xl text-white font-semibold tracking-wide">
-            Time and Record Attendance Checking System (RCC-TRACS)
+          <p className="text-lg md:text-4xl text-white font-semibold tracking-wide">
+            Time and Record Attendance Checking System (RCC-TRACS): <br />
+            A Web-Based Solution with Data Analytics for Enhanced Monitoring
           </p>
           <p className="mt-4 text-2xl md:text-3xl text-yellow-200 font-bold">
             {currentTime}
