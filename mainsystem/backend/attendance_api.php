@@ -124,7 +124,7 @@ $attendanceRules = [
     ]
 ];
 
-$collegeDepts = ["ABEL","BEED","BSA","BSBA","BSCE","BSED","BSHM","BSTM","BSIT"];
+$collegeDepts = ["ABEL","BEED","BSA","BSBA","BSCE","BSED","BSHM","BSTM","BSIT","BSMA"];
 $shsStrands = ["STEM","HUMSS","ABM","GAS"];
 
 // Cutoff times for absents
