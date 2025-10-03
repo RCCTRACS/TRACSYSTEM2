@@ -309,7 +309,7 @@ if ($method === 'POST') {
                     color: #222;
                     text-align: center;
                   ">
-                    <img src="https://i.ibb.co/4R9302hJ/logo.png" alt="TRAC System" style="width:100px;height:100px;object-fit:contain;margin-bottom:18px;" />
+                    <img src="https://i.ibb.co/twYJMHCY/logo.png" alt="TRAC System" style="width:100px;height:100px;object-fit:contain;margin-bottom:18px;" />
                     <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:18px;">Attendance Notification</h2>
                     <p style="font-size:1.1rem;margin-bottom:18px;">
                       Your child, <b>' . htmlspecialchars($studentName) . '</b> has entered RCC at:

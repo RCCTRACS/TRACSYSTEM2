@@ -65,7 +65,7 @@ try {
         color: #222;
         text-align: center;
       ">
-        <img src="https://i.ibb.co/4R9302hJ/logo.png" alt="TRAC System" style="width:100px;height:100px;object-fit:contain;margin-bottom:18px;" />
+        <img src="https://i.ibb.co/twYJMHCY/logo.png" alt="TRAC System" style="width:100px;height:100px;object-fit:contain;margin-bottom:18px;" />
         <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:18px;">TRAC System</h2>
         <p style="font-size:1.1rem;margin-bottom:18px;">Your OTP Code is:</p>
         <div style="font-size:2.4rem;font-weight:700;color:#5b3a1a;letter-spacing:2px;margin-bottom:18px;">' . $otp . '</div>
