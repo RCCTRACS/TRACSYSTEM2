@@ -349,12 +349,17 @@ export function SubjectFormDialog({
               <SelectValue placeholder="Select Instructor" />
             </SelectTrigger>
             <SelectContent>
-              {instructors.map((t) => (
-                <SelectItem key={t.id} value={`${t.first_name} ${t.last_name}`}>
-                  {t.first_name} {t.last_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
+  {[...instructors]
+    .sort((a, b) =>
+      `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
+    )
+    .map((t) => (
+      <SelectItem key={t.id} value={`${t.first_name} ${t.last_name}`}>
+        {t.first_name} {t.last_name}
+      </SelectItem>
+    ))}
+</SelectContent>
+
           </Select>
         </div>
 

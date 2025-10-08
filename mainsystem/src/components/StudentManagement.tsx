@@ -63,8 +63,14 @@ export function StudentManagement() {
       const res = await fetch(API_URL);
       const result = await res.json();
       const list: Student[] = result?.data ?? [];
-      setStudents(list);
-      setFilteredStudents(list);
+
+      // Sort alphabetically by student name
+      const sortedList = [...list].sort((a, b) =>
+        a.student_name.localeCompare(b.student_name)
+      );
+
+      setStudents(sortedList);
+      setFilteredStudents(sortedList);
     } catch (err) {
       console.error("Failed to fetch students", err);
     }
@@ -108,18 +114,22 @@ export function StudentManagement() {
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     const lowerTerm = term.toLowerCase();
-    setFilteredStudents(
-      students.filter(
-        (s) =>
-          s.barcode_id.toLowerCase().includes(lowerTerm) ||
-          s.student_name.toLowerCase().includes(lowerTerm) ||
-          s.year_level.toLowerCase().includes(lowerTerm) ||
-          s.department.toLowerCase().includes(lowerTerm) ||
-          (s.strand ?? "").toLowerCase().includes(lowerTerm) ||
-          (s.section ?? "").toLowerCase().includes(lowerTerm) ||
-          s.parent_email.toLowerCase().includes(lowerTerm)
-      )
+    const filtered = students.filter(
+      (s) =>
+        s.barcode_id.toLowerCase().includes(lowerTerm) ||
+        s.student_name.toLowerCase().includes(lowerTerm) ||
+        s.year_level.toLowerCase().includes(lowerTerm) ||
+        s.department.toLowerCase().includes(lowerTerm) ||
+        (s.strand ?? "").toLowerCase().includes(lowerTerm) ||
+        (s.section ?? "").toLowerCase().includes(lowerTerm) ||
+        s.parent_email.toLowerCase().includes(lowerTerm)
     );
+
+    // Sort the filtered list alphabetically too
+    const sortedFiltered = [...filtered].sort((a, b) =>
+      a.student_name.localeCompare(b.student_name)
+    );
+    setFilteredStudents(sortedFiltered);
   };
 
   // --- Add/Edit Student ---
@@ -201,10 +211,7 @@ export function StudentManagement() {
   };
 
   // --- Apply Filter ---
-  const handleFilter = (
-    department: string | null,
-    yearLevel: string | null
-  ) => {
+  const handleFilter = (department: string | null, yearLevel: string | null) => {
     let filtered = [...students];
     if (department) {
       filtered = filtered.filter(
@@ -216,7 +223,12 @@ export function StudentManagement() {
         (s) => s.year_level.toLowerCase() === yearLevel.toLowerCase()
       );
     }
-    setFilteredStudents(filtered);
+
+    // Sort alphabetically after filtering
+    const sortedFiltered = [...filtered].sort((a, b) =>
+      a.student_name.localeCompare(b.student_name)
+    );
+    setFilteredStudents(sortedFiltered);
   };
 
   return (

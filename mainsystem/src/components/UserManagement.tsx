@@ -55,17 +55,25 @@ export function UserManagement() {
   const outlineDarkBrownBtn =
     "bg-white text-black border-2 border-[#5C4033] rounded-md hover:bg-[#5C4033] hover:text-white";
 
+  // 🔤 Sort helper function
+  const sortUsers = (list: User[]) => {
+    return [...list].sort((a, b) =>
+      a.first_name.localeCompare(b.first_name, "en", { sensitivity: "base" })
+    );
+  };
+
   // Fetch users
   useEffect(() => {
     fetch(API_URL)
       .then((res) => res.json())
       .then((data) => {
         const list: User[] = data?.users ?? (Array.isArray(data) ? data : []);
-        setUsers(list);
-        setFilteredUsers(list);
+        const sortedList = sortUsers(list);
+        setUsers(sortedList);
+        setFilteredUsers(sortedList);
         const userId = localStorage.getItem("authUserId");
         if (userId) {
-          const user = list.find((u) => u.id === userId);
+          const user = sortedList.find((u) => u.id === userId);
           setCurrentUser(user ?? null);
         }
       })
@@ -84,7 +92,7 @@ export function UserManagement() {
         u.role.toLowerCase().includes(t) ||
         u.status.toLowerCase().includes(t)
     );
-    setFilteredUsers(searchFiltered);
+    setFilteredUsers(sortUsers(searchFiltered));
   };
 
   // Add/Edit
@@ -102,8 +110,9 @@ export function UserManagement() {
             const updated = users.map((u) =>
               u.id === selectedUser.id ? { ...u, ...res.user } : u
             );
-            setUsers(updated);
-            setFilteredUsers(updated);
+            const sorted = sortUsers(updated);
+            setUsers(sorted);
+            setFilteredUsers(sorted);
           } else {
             alert(res.message || "Failed to update user.");
           }
@@ -119,7 +128,7 @@ export function UserManagement() {
         .then((res) => res.json())
         .then((res) => {
           if (res.success && res.user) {
-            const updated = [...users, res.user as User];
+            const updated = sortUsers([...users, res.user as User]);
             setUsers(updated);
             setFilteredUsers(updated);
           } else {
@@ -154,8 +163,9 @@ export function UserManagement() {
       .then((res) => {
         if (res.success) {
           const remaining = users.filter((u) => u.id !== selectedUser.id);
-          setUsers(remaining);
-          setFilteredUsers(remaining);
+          const sorted = sortUsers(remaining);
+          setUsers(sorted);
+          setFilteredUsers(sorted);
           setIsDeleteUserOpen(false);
           setSelectedUser(null);
         } else {
@@ -293,7 +303,7 @@ export function UserManagement() {
             </DialogTrigger>
             <BulkUploadDialog
               onUpload={(newUsers) => {
-                const updatedUsers = [...users, ...newUsers];
+                const updatedUsers = sortUsers([...users, ...newUsers]);
                 setUsers(updatedUsers);
                 setFilteredUsers(updatedUsers);
               }}
@@ -327,12 +337,12 @@ export function UserManagement() {
             <FilterUserDialog
               onFilter={(department) => {
                 if (department === "All") {
-                  setFilteredUsers(users);
+                  setFilteredUsers(sortUsers(users));
                 } else {
                   const filtered = users.filter(
                     (u) => (u.department ?? "") === department
                   );
-                  setFilteredUsers(filtered);
+                  setFilteredUsers(sortUsers(filtered));
                 }
               }}
               onClose={() => setIsFilterOpen(false)}
