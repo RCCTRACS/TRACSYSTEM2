@@ -251,6 +251,7 @@ export function UserFormDialog({
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="Junior High">Junior High</SelectItem>
                 <SelectItem value="Senior High">Senior High</SelectItem>
                 <SelectItem value="College">College</SelectItem>
               </SelectContent>
