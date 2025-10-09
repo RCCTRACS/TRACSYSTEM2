@@ -64,7 +64,6 @@ export function StudentManagement() {
       const result = await res.json();
       const list: Student[] = result?.data ?? [];
 
-      // Sort alphabetically by student name
       const sortedList = [...list].sort((a, b) =>
         a.student_name.localeCompare(b.student_name)
       );
@@ -125,7 +124,6 @@ export function StudentManagement() {
         s.parent_email.toLowerCase().includes(lowerTerm)
     );
 
-    // Sort the filtered list alphabetically too
     const sortedFiltered = [...filtered].sort((a, b) =>
       a.student_name.localeCompare(b.student_name)
     );
@@ -197,7 +195,6 @@ export function StudentManagement() {
     setSelectedStudent(null);
   };
 
-  // --- Download Template ---
   const handleDownloadTemplate = () => {
     const csvContent =
       "barcode_id,student_name,year_level,department,strand,section,parent_email\n";
@@ -210,7 +207,6 @@ export function StudentManagement() {
     document.body.removeChild(link);
   };
 
-  // --- Apply Filter ---
   const handleFilter = (department: string | null, yearLevel: string | null) => {
     let filtered = [...students];
     if (department) {
@@ -224,7 +220,6 @@ export function StudentManagement() {
       );
     }
 
-    // Sort alphabetically after filtering
     const sortedFiltered = [...filtered].sort((a, b) =>
       a.student_name.localeCompare(b.student_name)
     );
@@ -310,7 +305,6 @@ export function StudentManagement() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Add Student */}
           <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
             <DialogTrigger asChild>
               <Button
@@ -330,7 +324,6 @@ export function StudentManagement() {
             )}
           </Dialog>
 
-          {/* Download Template */}
           <Button
             className={outlineDarkBrownBtn}
             onClick={handleDownloadTemplate}
@@ -339,7 +332,6 @@ export function StudentManagement() {
             Download Template
           </Button>
 
-          {/* Bulk Upload */}
           <Dialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen}>
             <DialogTrigger asChild>
               <Button className={outlineDarkBrownBtn}>
@@ -375,7 +367,6 @@ export function StudentManagement() {
             )}
           </Dialog>
 
-          {/* Export */}
           <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
             <DialogTrigger asChild>
               <Button className={outlineDarkBrownBtn}>
@@ -391,7 +382,6 @@ export function StudentManagement() {
             )}
           </Dialog>
 
-          {/* Filter */}
           <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <DialogTrigger asChild>
               <Button className={outlineDarkBrownBtn}>
@@ -435,13 +425,21 @@ export function StudentManagement() {
                   key={student.barcode_id}
                   className="grid grid-cols-8 gap-x-4 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
                 >
-                  <div className="font-medium">{student.barcode_id}</div>
-                  <div>{student.student_name}</div>
-                  <div>{student.year_level}</div>
-                  <div>{student.department}</div>
-                  <div>{student.strand || "-"}</div>
-                  <div>{student.section || "-"}</div>
-                  <div>{student.parent_email}</div>
+                  <div className="font-medium truncate">{student.barcode_id}</div>
+                  <div className="truncate">{student.student_name}</div>
+                  <div className="truncate">{student.year_level}</div>
+                  <div className="truncate">{student.department}</div>
+                  <div className="truncate">{student.strand || "-"}</div>
+                  <div className="truncate">{student.section || "-"}</div>
+
+                  {/* Fix: Prevent email text from spilling */}
+                  <div
+                    className="truncate max-w-[180px] mx-auto"
+                    title={student.parent_email}
+                  >
+                    {student.parent_email}
+                  </div>
+
                   <div className="flex justify-center gap-2">
                     <Button
                       variant="ghost"
@@ -465,7 +463,6 @@ export function StudentManagement() {
         </CardContent>
       </Card>
 
-      {/* Edit Student Dialog */}
       <Dialog open={isEditStudentOpen} onOpenChange={setIsEditStudentOpen}>
         {isEditStudentOpen && (
           <StudentFormDialog
@@ -479,7 +476,6 @@ export function StudentManagement() {
         )}
       </Dialog>
 
-      {/* Delete Confirmation */}
       <DeleteStudentDialog
         isOpen={isDeleteStudentOpen}
         onClose={() => {

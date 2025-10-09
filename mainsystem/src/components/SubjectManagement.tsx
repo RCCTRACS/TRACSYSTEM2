@@ -10,8 +10,7 @@ import {
   Download,
   Upload,
   Edit,
-  Trash2,
-  User as UserIcon
+  Trash2
 } from "lucide-react";
 
 import { SubjectFormDialog } from "./SubjectFormDialog";
@@ -20,7 +19,7 @@ import { FilterSubjectDialog } from "./FilterSubjectDialog";
 import { ExportSubjectDialog } from "./ExportSubjectDialog";
 import { BulkUploadSubject } from "./BulkUploadSubject";
 import { UserFormDialog } from "./UserFormDialog";
-import type { User } from "./UserFormDialog"; // Make sure this import matches your UserFormDialog
+import type { User } from "./UserFormDialog";
 
 type DisplaySubject = {
   subject_code: string;
@@ -50,14 +49,10 @@ const API_URL =
 
 export function SubjectManagement() {
   const [subjects, setSubjects] = useState<DisplaySubject[]>([]);
-  const [filteredSubjects, setFilteredSubjects] = useState<DisplaySubject[]>(
-    []
-  );
+  const [filteredSubjects, setFilteredSubjects] = useState<DisplaySubject[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [editingSubject, setEditingSubject] = useState<FormSubject | null>(
-    null
-  );
+  const [editingSubject, setEditingSubject] = useState<FormSubject | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
@@ -82,7 +77,7 @@ export function SubjectManagement() {
   }, []);
 
   useEffect(() => {
-    setFilteredSubjects(subjects);
+    setFilteredSubjects(sortSubjects(subjects));
   }, [subjects]);
 
   useEffect(() => {
@@ -98,12 +93,20 @@ export function SubjectManagement() {
     }
   }, []);
 
+  const sortSubjects = (list: DisplaySubject[]) => {
+    return [...list].sort((a, b) =>
+      a.subject_name.localeCompare(b.subject_name, undefined, {
+        sensitivity: "base"
+      })
+    );
+  };
+
   const fetchSubjects = async () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
       if (data.success && Array.isArray(data.subjects)) {
-        setSubjects(data.subjects);
+        setSubjects(sortSubjects(data.subjects));
       } else {
         setSubjects([]);
       }
@@ -122,7 +125,7 @@ export function SubjectManagement() {
         (s.grade ?? "").toLowerCase().includes(t) ||
         (s.instructor ?? "").toLowerCase().includes(t)
     );
-    setFilteredSubjects(filtered);
+    setFilteredSubjects(sortSubjects(filtered));
   };
 
   const handleSave = async (data: FormSubject) => {
@@ -212,7 +215,7 @@ export function SubjectManagement() {
           <h2 className="text-3xl font-bold text-black">Subject Management</h2>
         </div>
 
-        {/* Profile dropdown (EXACT COPY from UserManagement) */}
+        {/* Profile dropdown */}
         <div className="relative">
           <div
             className="flex items-center bg-[#f3f3f3] px-3 py-2 rounded-full border-2 border-[#5C4033] cursor-pointer"
@@ -250,7 +253,6 @@ export function SubjectManagement() {
             </div>
           )}
 
-          {/* Edit Profile Modal */}
           <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
             <UserFormDialog
               user={currentUser}
@@ -313,7 +315,7 @@ export function SubjectManagement() {
                     body: JSON.stringify(s)
                   });
                 }
-                fetchSubjects();
+                await fetchSubjects();
               }}
               onClose={() => setIsBulkOpen(false)}
             />
@@ -343,7 +345,6 @@ export function SubjectManagement() {
               onFilter={(department, grade, strand, section) => {
                 let filtered = subjects;
 
-                // Normalize for flexible match
                 const norm = (val?: string | null) =>
                   val ? val.trim().toLowerCase() : "";
 
@@ -368,7 +369,7 @@ export function SubjectManagement() {
                   );
                 }
 
-                setFilteredSubjects(filtered);
+                setFilteredSubjects(sortSubjects(filtered));
               }}
               onClose={() => setIsFilterOpen(false)}
             />
@@ -432,7 +433,7 @@ export function SubjectManagement() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         {editingSubject && (
           <SubjectFormDialog
-            key={editingSubject.subject_code} // 🔑 forces remount when switching subjects
+            key={editingSubject.subject_code}
             subject={editingSubject}
             onSave={handleSave}
             onClose={() => {
