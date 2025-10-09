@@ -414,52 +414,46 @@ export function StudentManagement() {
             <div></div>
           </div>
 
-          <div className="mt-2 space-y-3">
-            {filteredStudents.length === 0 ? (
-              <div className="text-center text-gray-500 py-6">
-                No students found
-              </div>
-            ) : (
-              filteredStudents.map((student) => (
-                <div
-                  key={student.barcode_id}
-                  className="grid grid-cols-8 gap-x-4 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
-                >
-                  <div className="font-medium truncate">{student.barcode_id}</div>
-                  <div className="truncate">{student.student_name}</div>
-                  <div className="truncate">{student.year_level}</div>
-                  <div className="truncate">{student.department}</div>
-                  <div className="truncate">{student.strand || "-"}</div>
-                  <div className="truncate">{student.section || "-"}</div>
+         <div className="mt-2 space-y-3">
+  {filteredStudents.length === 0 ? (
+    <div className="text-center text-gray-500 py-6">
+      No students found
+    </div>
+  ) : (
+    filteredStudents.map((student) => (
+      <div
+        key={student.barcode_id}
+        className="grid grid-cols-8 gap-x-4 items-center text-center bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl shadow-sm"
+      >
+        <div className="font-medium break-words">{student.barcode_id}</div>
+        <div className="break-words">{student.student_name}</div>
+        <div className="break-words">{student.year_level}</div>
+        <div className="break-words">{student.department}</div>
+        <div className="break-words">{student.strand || "-"}</div>
+        <div className="break-words">{student.section || "-"}</div>
+        <div className="break-words">{student.parent_email}</div>
 
-                  {/* Fix: Prevent email text from spilling */}
-                  <div
-                    className="truncate max-w-[180px] mx-auto"
-                    title={student.parent_email}
-                  >
-                    {student.parent_email}
-                  </div>
+        <div className="flex justify-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditStudent(student)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteStudent(student)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    ))
+  )}
+</div>
 
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditStudent(student)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteStudent(student)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
         </CardContent>
       </Card>
 
