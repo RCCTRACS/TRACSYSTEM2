@@ -225,17 +225,26 @@ export const AttendanceConfirmation = () => {
                 </div>
               ) : student && barcode ? (
                 <div className="w-full max-w-[420px] aspect-[3/4] flex justify-center items-center">
-                  <img
-                    key={student.barcode_id + "-" + (student.time_in ?? "")}
-                    src={`http://192.168.1.13/capstone/mainsystem/students/${barcode}.jpg`}
-                    alt="Student"
-                    className="w-full h-full object-cover rounded-lg"
-                    onError={(e) =>
-                      ((e.target as HTMLImageElement).src =
-                        "/fallback-student.png")
-                    }
-                  />
-                </div>
+                    <img
+                      key={student.barcode_id + "-" + (student.time_in ?? "")}
+                      src={`http://192.168.1.13/capstone/mainsystem/students/${barcode}.jpg`}
+                      alt="Student"
+                      className="w-full h-full object-cover rounded-lg"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        const currentSrc = img.src;
+
+                        if (currentSrc.endsWith(".jpg")) {
+                          img.src = `http://192.168.1.13/capstone/mainsystem/students/${barcode}.jpeg`;
+                        } else if (currentSrc.endsWith(".jpeg")) {
+                          img.src = `http://192.168.1.13/capstone/mainsystem/students/${barcode}.png`;
+                        } else {
+                          img.src = "capstone/mainsystem/public/logo.png"; // final fallback
+                        }
+                      }}
+                    />
+                  </div>
+
               ) : (
                 <p className="text-gray-500 text-lg sm:text-2xl">
                   No photo available
