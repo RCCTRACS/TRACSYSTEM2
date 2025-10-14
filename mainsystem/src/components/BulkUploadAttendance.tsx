@@ -13,25 +13,22 @@ interface BulkUploadAttendanceProps {
   onClose: () => void;
 }
 
-// --- Validate time (hh:mm AM/PM only, same as Manual Input) ---
+// ✅ Validate time format (hh:mm AM/PM)
 const isValidTime = (t: string) =>
   /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?([AaPp][Mm])$/.test(t.trim());
 
-// --- Convert hh:mm AM/PM → HH:mm:ss (24-hour) ---
+// ✅ Convert hh:mm AM/PM → HH:mm:ss (24-hour)
 const to24Hour = (t: string) => {
   const match = t.trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
   if (!match) return t;
-
   let [_, hh, mm, period] = match;
   let hours = parseInt(hh, 10);
-
   if (period.toLowerCase() === "pm" && hours < 12) hours += 12;
   if (period.toLowerCase() === "am" && hours === 12) hours = 0;
-
   return `${hours.toString().padStart(2, "0")}:${mm}:00`;
 };
 
-// --- Download Template (aligned with Manual Input) ---
+// ✅ Download CSV Template
 const handleDownloadTemplate = () => {
   const template = "Barcode ID,Time In\n";
   const blob = new Blob([template], { type: "text/csv;charset=utf-8;" });
@@ -48,63 +45,81 @@ export function BulkUploadAttendance({ onUpload, onClose }: BulkUploadAttendance
   const [error, setError] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<any[]>([]);
+  const [allData, setAllData] = useState<any[]>([]);
 
+  // ✅ Handle File Selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
-      setError("");
+    if (!e.target.files?.length) return;
 
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          const previewRows = (results.data as any[]).slice(0, 10).map((row) => {
-            const rawTime = row["Time In"]?.trim() || "";
+    const file = e.target.files[0];
+    setSelectedFile(file);
+    setError("");
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: false, // we'll manually clean
+      complete: (results) => {
+        const parsed = results.data as any[];
+
+        // ✅ Clean and validate rows
+        const rows = parsed
+          .map((row) => {
+            const cleanBarcode = (row["Barcode ID"] || "").trim();
+            const rawTime = (row["Time In"] || "").trim();
+
+            if (!cleanBarcode || !rawTime) return null; // ignore blanks
+
             return {
-              barcode_id: row["Barcode ID"],
+              barcode_id: cleanBarcode,
               time_in: isValidTime(rawTime) ? to24Hour(rawTime) : rawTime,
             };
-          });
-          setPreview(previewRows);
-        },
-        error: () => setPreview([]),
-      });
-    }
+          })
+          .filter(Boolean); // remove nulls
+
+        if (rows.length === 0) {
+          setError("No valid rows found. Please check your CSV file.");
+          setAllData([]);
+          setPreview([]);
+          return;
+        }
+
+        setAllData(rows);
+        setPreview(rows.slice(0, 10));
+      },
+      error: (err) => {
+        console.error("PapaParse error:", err);
+        setError("Failed to read the CSV file. Please try again.");
+        setPreview([]);
+        setAllData([]);
+      },
+    });
   };
 
+  // ✅ Handle Upload
   const handleUpload = async () => {
-    if (!selectedFile) {
-      setError("Please select a file before uploading.");
-      return;
-    }
+    if (!selectedFile) return setError("Please select a file first.");
+    if (allData.length === 0) return setError("No valid data to upload.");
 
     try {
       setIsUploading(true);
+      setError("");
 
-      Papa.parse(selectedFile, {
-        header: true,
-        skipEmptyLines: true,
-        complete: async (results) => {
-          const rows = (results.data as any[]).map((row) => {
-            const rawTime = row["Time In"]?.trim() || "";
+      // Validate before sending
+      for (let i = 0; i < allData.length; i++) {
+        const { barcode_id, time_in } = allData[i];
+        if (!barcode_id || !time_in)
+          throw new Error(`Missing data in row ${i + 1}.`);
+        if (!isValidTime(time_in) && !/^\d{2}:\d{2}:\d{2}$/.test(time_in))
+          throw new Error(`Invalid time format in row ${i + 1}: "${time_in}".`);
+      }
 
-            if (!isValidTime(rawTime)) {
-              throw new Error(`Invalid time format: "${rawTime}". Use hh:mm AM/PM.`);
-            }
+      await onUpload(allData);
 
-            return {
-              barcode_id: row["Barcode ID"],
-              time_in: to24Hour(rawTime),
-            };
-          });
-
-          await onUpload(rows);
-          setSelectedFile(null);
-          setPreview([]);
-          onClose();
-        },
-      });
+      // Reset states
+      setSelectedFile(null);
+      setPreview([]);
+      setAllData([]);
+      onClose();
     } catch (err: any) {
       setError(err.message || "Upload failed. Please check your file.");
     } finally {
@@ -121,7 +136,7 @@ export function BulkUploadAttendance({ onUpload, onClose }: BulkUploadAttendance
       </DialogHeader>
 
       <div className="space-y-6 mt-4">
-        {/* File Input */}
+        {/* ✅ File Input */}
         <div className="space-y-2">
           <Label className="font-bold text-black">Choose File</Label>
           <Input
@@ -136,7 +151,7 @@ export function BulkUploadAttendance({ onUpload, onClose }: BulkUploadAttendance
           {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
         </div>
 
-        {/* Download Template */}
+        {/* ✅ Template Download */}
         <div className="flex justify-between items-center">
           <p className="text-xs text-muted-foreground">
             CSV must have <b>Barcode ID</b> and <b>Time In</b> columns
@@ -153,10 +168,12 @@ export function BulkUploadAttendance({ onUpload, onClose }: BulkUploadAttendance
           </Button>
         </div>
 
-        {/* Preview */}
+        {/* ✅ Preview */}
         {preview.length > 0 && (
           <div className="max-h-40 overflow-y-auto border p-3 rounded-lg bg-gray-50 text-sm shadow-inner">
-            <p className="font-semibold text-black mb-2">Preview:</p>
+            <p className="font-semibold text-black mb-2">
+              Preview (showing first 10 of {allData.length} rows):
+            </p>
             <div className="grid grid-cols-2 font-bold border-b pb-1 mb-1 text-[#3E1F0F]">
               <span>Barcode ID</span>
               <span>Time In</span>
@@ -173,7 +190,7 @@ export function BulkUploadAttendance({ onUpload, onClose }: BulkUploadAttendance
           </div>
         )}
 
-        {/* Actions */}
+        {/* ✅ Actions */}
         <div className="flex justify-end gap-3 mt-2">
           <Button
             variant="outline"
@@ -181,6 +198,7 @@ export function BulkUploadAttendance({ onUpload, onClose }: BulkUploadAttendance
               setSelectedFile(null);
               setError("");
               setPreview([]);
+              setAllData([]);
               onClose();
             }}
             disabled={isUploading}
@@ -193,7 +211,7 @@ export function BulkUploadAttendance({ onUpload, onClose }: BulkUploadAttendance
             disabled={!selectedFile || isUploading}
           >
             <Upload className="h-4 w-4 mr-2" />
-            {isUploading ? "Uploading..." : "Upload"}
+            {isUploading ? "Uploading..." : "Upload All"}
           </Button>
         </div>
       </div>
