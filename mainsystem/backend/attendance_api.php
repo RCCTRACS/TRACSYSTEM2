@@ -100,15 +100,15 @@ $attendanceRules = [
     ],
     // JHS
     "JHS" => [
-        "Grade 7"  => ["start" => "07:30:00", "grace" => "07:45:00"],
-        "Grade 8"  => ["start" => "07:30:00", "grace" => "07:45:00"],
-        "Grade 9"  => ["start" => "07:30:00", "grace" => "07:45:00"],
-        "Grade 10" => ["start" => "07:30:00", "grace" => "07:45:00"],
+        "Grade 7"  => ["start" => "07:00:00", "grace" => "07:15:00"],
+        "Grade 8"  => ["start" => "07:00:00", "grace" => "07:15:00"],
+        "Grade 9"  => ["start" => "07:00:00", "grace" => "07:15:00"],
+        "Grade 10" => ["start" => "07:00:00", "grace" => "07:15:00"],
     ],
     // SHS
     "STEM" => [
-        "Grade 11" => ["start" => "08:00:00", "grace" => "08:15:00"],
-        "Grade 12" => ["start" => "08:00:00", "grace" => "08:15:00"],
+        "Grade 11" => ["start" => "07:00:00", "grace" => "07:15:00"],
+        "Grade 12" => ["start" => "07:00:00", "grace" => "07:15:00"],
     ],
     "HUMSS" => [
         "Grade 11" => ["start" => "08:00:00", "grace" => "08:20:00"],
@@ -213,16 +213,16 @@ if ($method === 'POST') {
         if (preg_match('/Grade\s*(\d+)/i', $yearLevel, $m)) {
             $gradeNum = intval($m[1]);
             if ($gradeNum >= 11) {
-                $appliedRule = ["start" => "08:00:00", "grace" => "08:15:00"];
+                $appliedRule = ["start" => "07:00:00", "grace" => "07:15:00"];
             } else {
-                $appliedRule = ["start" => "07:30:00", "grace" => "07:45:00"];
+                $appliedRule = ["start" => "07:00:00", "grace" => "07:15:00"];
             }
         } elseif (in_array(strtoupper($department), $collegeDepts, true)) {
             $appliedRule = ["start" => "13:00:00", "grace" => "13:15:00"];
         } elseif (in_array(strtoupper($department), $shsStrands, true)) {
-            $appliedRule = ["start" => "08:00:00", "grace" => "08:15:00"];
+            $appliedRule = ["start" => "07:00:00", "grace" => "07:15:00"];
         } else {
-            $appliedRule = ["start" => "08:00:00", "grace" => "08:15:00"];
+            $appliedRule = ["start" => "07:00:00", "grace" => "07:15:00"];
         }
     }
 
