@@ -81,7 +81,7 @@ try {
         $mail->Body = '
           <div style="font-family:Sora,Arial,sans-serif;background:#f9f7f1;border-radius:24px;
           border:3px solid #5b3a1a;max-width:420px;margin:32px auto;padding:32px 24px;text-align:center;">
-            <img src="https://i.ibb.co/twYJMHCY/logo.png" alt="TRAC System" 
+            <img src="https://scontent.fcrk1-5.fna.fbcdn.net/v/t39.30808-6/598618782_122279774894198393_5794352533800714966_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=127cfc&_nc_ohc=c-Rk3Uqx_qEQ7kNvwH4uS-I&_nc_oc=AdlXW3j7M7OhIbQ4kJ9z3gfaDJyLb9DQrgoqV8mzfZ-3qw1A7yVErwzbEIu4zLIzvAI&_nc_zt=23&_nc_ht=scontent.fcrk1-5.fna&_nc_gid=UcHjZdacJ8ZJODy0FR3ygA&oh=00_AfnDFNcL3Rw-dI9tKMuCPIzGYe4-TgeBZhzvdYfIG43B9g&oe=6941347C" alt="TRAC System" 
                  style="width:100px;height:100px;object-fit:contain;margin-bottom:18px;" />
             <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:18px;">Attendance Notification</h2>
             <p style="font-size:1.1rem;margin-bottom:18px;">
@@ -95,7 +95,7 @@ try {
         $mail->Body = '
           <div style="font-family:Sora,Arial,sans-serif;background:#fff4f4;border-radius:24px;
           border:3px solid #b00020;max-width:420px;margin:32px auto;padding:32px 24px;text-align:center;">
-            <img src="https://i.ibb.co/twYJMHCY/logo.png" alt="TRAC System" 
+            <img src="https://scontent.fcrk1-5.fna.fbcdn.net/v/t39.30808-6/598618782_122279774894198393_5794352533800714966_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=127cfc&_nc_ohc=c-Rk3Uqx_qEQ7kNvwH4uS-I&_nc_oc=AdlXW3j7M7OhIbQ4kJ9z3gfaDJyLb9DQrgoqV8mzfZ-3qw1A7yVErwzbEIu4zLIzvAI&_nc_zt=23&_nc_ht=scontent.fcrk1-5.fna&_nc_gid=UcHjZdacJ8ZJODy0FR3ygA&oh=00_AfnDFNcL3Rw-dI9tKMuCPIzGYe4-TgeBZhzvdYfIG43B9g&oe=6941347C" alt="TRAC System" 
                  style="width:100px;height:100px;object-fit:contain;margin-bottom:18px;" />
             <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:18px;color:#b00020;">Absence Notification</h2>
             <p style="font-size:1.1rem;margin-bottom:18px;">
