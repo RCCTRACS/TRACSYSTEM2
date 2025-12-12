@@ -164,7 +164,7 @@ export const AttendanceConfirmation = () => {
       setLoading(false);
 
       navigate("/attendance", { replace: true });
-    }, 3000);
+    }, 1500);
 
     return () => {
       if (abortControllerRef.current) {
