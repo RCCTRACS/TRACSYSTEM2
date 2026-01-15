@@ -282,7 +282,7 @@ if ($method === 'POST') {
                 $mail->Host       = 'smtp.gmail.com';
                 $mail->SMTPAuth   = true;
                 $mail->Username   = 'rcctracs@gmail.com';
-                $mail->Password   = 'gobn hwdt gelo sqeg'; // App password
+                $mail->Password   = 'dqre wgmc omcr lwwr'; // App password
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
                 $mail->SMTPOptions = [
